@@ -1,9 +1,9 @@
 {
-  "name": "microduck-headless-lab",
+  "name": "duckbert",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Controllo della camminata del Microduck headless in MuJoCo, direttamente nel browser",
+  "description": "Duckbert headless robot walking simulation with directional controls in the browser",
   "scripts": {
     "vendor": "node scripts/vendor.mjs",
     "test": "node scripts/smoke.mjs",
