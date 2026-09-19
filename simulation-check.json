@@ -1,0 +1,66 @@
+[
+  {
+    "direction": "forward",
+    "heading_deg": 5.235680135642462,
+    "x_m": 0.4303755921845444,
+    "time": 12.000000000000776,
+    "distance": 0.4307264333690515,
+    "speed": 0.09735954333249636,
+    "roll": -0.18033060899681788,
+    "pitch": 0.21194509936669,
+    "contacts": [
+      true,
+      false
+    ],
+    "fallen": false,
+    "wall_seconds": 0.135
+  },
+  {
+    "direction": "left",
+    "heading_deg": 24.811965412784758,
+    "x_m": 0.39130992976779955,
+    "time": 12.000000000000776,
+    "distance": 0.4050162160775552,
+    "speed": 0.07654800795591898,
+    "roll": -0.19557682090791528,
+    "pitch": 0.23958563306175748,
+    "contacts": [
+      true,
+      false
+    ],
+    "fallen": false,
+    "wall_seconds": 0.086
+  },
+  {
+    "direction": "right",
+    "heading_deg": -20.560682031103187,
+    "x_m": 0.411789775173994,
+    "time": 12.000000000000776,
+    "distance": 0.41410948531136677,
+    "speed": 0.15488654794077378,
+    "roll": -0.204867368270068,
+    "pitch": 0.25170564133836837,
+    "contacts": [
+      true,
+      false
+    ],
+    "fallen": false,
+    "wall_seconds": 0.083
+  },
+  {
+    "direction": "backward",
+    "heading_deg": 113.3594504867499,
+    "x_m": -0.2700760334968744,
+    "time": 12.000000000000776,
+    "distance": 0.45297273795037457,
+    "speed": 0.23669458872912472,
+    "roll": -0.12296570941235448,
+    "pitch": 0.11583215308834809,
+    "contacts": [
+      true,
+      false
+    ],
+    "fallen": false,
+    "wall_seconds": 0.095
+  }
+]

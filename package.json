@@ -1,0 +1,16 @@
+{
+  "name": "microduck-headless-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Controllo della camminata del Microduck headless in MuJoCo, direttamente nel browser",
+  "scripts": {
+    "vendor": "node scripts/vendor.mjs",
+    "test": "node scripts/smoke.mjs",
+    "serve": "python3 -m http.server 8768 --bind 127.0.0.1 --directory dist"
+  },
+  "dependencies": {
+    "@mujoco/mujoco": "3.6.0",
+    "three": "0.178.0"
+  }
+}

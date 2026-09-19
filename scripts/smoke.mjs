@@ -1,0 +1,34 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import loadMujoco from '@mujoco/mujoco';
+import {Simulation,command} from '../dist/simulation.js';
+const root=new URL('../',import.meta.url);
+const mj=await loadMujoco({wasmBinary:await readFile(new URL('node_modules/@mujoco/mujoco/mujoco.wasm',root))});
+mj.FS.mkdir('/robot');mj.FS.mkdir('/robot/meshes');
+for(const file of JSON.parse(await readFile(new URL('dist/assets/files.json',root),'utf8')))mj.FS.writeFile('/robot/'+file,new Uint8Array(await readFile(new URL('dist/assets/'+file,root))));
+mj.FS.writeFile('/robot/robot.xml',await readFile(new URL('dist/assets/robot.xml',root),'utf8'));
+const model=mj.MjModel.from_xml_path('/robot/robot.xml');
+const gaits=JSON.parse(await readFile(new URL('dist/assets/gaits.json',root),'utf8'));
+const sim=new Simulation(mj,model,gaits);
+const reports=[];
+assert.equal(gaits.length,1,'The site must expose exactly one gait');
+for(const [name,drive,turn] of [['forward',1,0],['left',1,-1],['right',1,1],['backward',-1,0]]){
+  sim.select(gaits[0].id);sim.drive=drive;sim.turn=turn;
+  const start=Date.now();
+  for(let i=0;i<6000&&!sim.fallen;i++)sim.step();
+  const [w,x,y,z]=sim.data.qpos.slice(3,7);
+  const heading_deg=Math.atan2(2*(w*z+x*y),1-2*(y*y+z*z))*180/Math.PI;
+  reports.push({direction:name,heading_deg,x_m:sim.data.qpos[0],...sim.metrics,fallen:sim.fallen,wall_seconds:(Date.now()-start)/1000});
+  console.log(JSON.stringify(reports.at(-1)));
+}
+await writeFile(new URL('simulation-check.json',root),JSON.stringify(reports,null,2));
+assert(reports.every(r=>!r.fallen&&r.distance>.1),'A direction did not complete the physics check');
+assert(reports[1].heading_deg>reports[0].heading_deg,'Left command must increase heading');
+assert(reports[2].heading_deg<reports[0].heading_deg,'Right command must decrease heading');
+assert(reports[3].x_m<0,'Backward command must move backwards');
+const html=await readFile(new URL('dist/index.html',root),'utf8');
+const app=await readFile(new URL('dist/app.js',root),'utf8');
+for(const match of app.matchAll(/\$\('([^']+)'\)/g))assert(html.includes(`id="${match[1]}"`),`Missing control ${match[1]}`);
+assert(!html.includes('id="gait"'),'No gait chooser');
+assert(!app.includes('serial')&&!app.includes('WebSocket'),'No hardware connection');
+sim.dispose();

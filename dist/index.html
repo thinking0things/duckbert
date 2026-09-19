@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Controlla la camminata del Microduck headless in una simulazione fisica MuJoCo nel browser.">
+  <meta name="theme-color" content="#101820">
+  <title>Microduck — Headless Lab</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js"}}</script>
+</head>
+<body>
+  <header>
+    <a class="brand" href="./"><span class="mark" aria-hidden="true">μ</span> MICRODUCK <span>HEADLESS LAB</span></a>
+    <span class="engine">MuJoCo · simulazione fisica</span>
+  </header>
+  <main>
+    <section class="workspace" aria-label="Simulazione 3D">
+      <div class="view-top"><span>HEADLESS / 6 SG90</span><span id="state" role="status">Caricamento…</span></div>
+      <div id="viewport" aria-label="Robot simulato in 3D; trascina per ruotare e usa la rotella per lo zoom"></div>
+      <div id="loading" role="status"><span class="loader"></span><strong>Preparazione del robot</strong><span id="load-detail">Caricamento del motore fisico…</span></div>
+      <div id="error" role="alert" hidden></div>
+      <div class="view-bottom"><span>Trascina per ruotare · rotella per zoom</span><label><input id="follow" type="checkbox" checked> Segui robot</label></div>
+      <div class="telemetry" aria-label="Misure della simulazione">
+        <div><span>Tempo simulato</span><strong id="time">0.0 <small>s</small></strong></div>
+        <div><span>Distanza</span><strong id="distance">0.0 <small>cm</small></strong></div>
+        <div><span>Velocità</span><strong id="velocity">0.0 <small>cm/s</small></strong></div>
+        <div><span>Appoggio</span><strong id="contact">—</strong></div>
+      </div>
+    </section>
+    <aside aria-label="Controlli camminata">
+      <div class="section-heading"><span class="eyebrow">SIMULAZIONE</span><h1>Scegli la<br>direzione.</h1></div>
+      <fieldset id="controls" disabled>
+        <div class="direction-pad" aria-label="Direzione del robot">
+          <button type="button" id="forward" data-drive="1" data-turn="0"><span aria-hidden="true">↑</span>Avanti</button>
+          <button type="button" id="left" data-drive="1" data-turn="-1"><span aria-hidden="true">↶</span>Sinistra</button>
+          <button type="button" id="pause"><span aria-hidden="true">Ⅱ</span>Pausa</button>
+          <button type="button" id="right" data-drive="1" data-turn="1"><span aria-hidden="true">↷</span>Destra</button>
+          <button type="button" id="backward" data-drive="-1" data-turn="0"><span aria-hidden="true">↓</span>Indietro</button>
+        </div>
+        <p class="hint">Tocca una direzione, oppure tieni premuti <kbd>W A S D</kbd> / frecce. <kbd>Spazio</kbd> mette in pausa.</p>
+        <button id="reset" class="reset-button" type="button">Riparti dal centro</button>
+        <div class="divider"></div>
+        <div class="subheading">Assetto del corpo <span>°</span></div>
+        <div class="attitude"><span>Rollio <b id="roll">0.0°</b></span><span>Beccheggio <b id="pitch">0.0°</b></span></div>
+      </fieldset>
+      <p class="model-note">Una sola andatura, piedi verso l’interno. La svolta modifica il passo relativo delle due gambe. Gravità e contatti sono simulati: se perde l’equilibrio, premi «Riparti dal centro».</p>
+    </aside>
+  </main>
+  <footer><span>THINKING THINGS / MICRODUCK</span><a id="repository" href="https://github.com/thinking0things/microduck-headless-lab" target="_blank" rel="noreferrer">Codice e modello ↗</a></footer>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
