@@ -1,0 +1,10 @@
+{
+  "model": "microduck9_none_feet_in.xml",
+  "model_sha256": "7b95ce2cf6cb21eb7f6048a15c7b201aec6acb98b8a07c74d1f2991b216af8e1",
+  "visual_meshes": "Frozen shell160_pre_tof meshes, compatible with the original model asset names",
+  "cad_revision": "baseline feet-in, not the unfinished CAD v1.2",
+  "controllers": [
+    "walk_feetin_mid"
+  ],
+  "steering": "Hip swing amplitude asymmetry, 10 percent maximum, with slew-limited targets"
+}
