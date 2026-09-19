@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id);
 let sim,view,running=false,last=0,accumulator=0,lastMetric=0;
 async function get(path,type='json') {
   const response=await fetch(new URL(path,import.meta.url));
-  if(!response.ok)throw Error(`Caricamento non riuscito (${response.status}): ${path}`);
+  if(!response.ok)throw Error(`Loading failed (${response.status}): ${path}`);
   return response[type]();
 }
 function updateMetrics() {
@@ -13,12 +13,12 @@ function updateMetrics() {
   $('time').innerHTML=`${m.time.toFixed(1)} <small>s</small>`;
   $('distance').innerHTML=`${(100*m.distance).toFixed(1)} <small>cm</small>`;
   $('velocity').innerHTML=`${(100*m.speed).toFixed(1)} <small>cm/s</small>`;
-  $('contact').textContent=m.contacts.every(Boolean)?'Entrambi':m.contacts[0]?'Sinistro':m.contacts[1]?'Destro':'In aria';
+  $('contact').textContent=m.contacts.every(Boolean)?'Both':m.contacts[0]?'Left':m.contacts[1]?'Right':'Airborne';
   $('roll').textContent=(m.roll*180/Math.PI).toFixed(1)+'°';$('pitch').textContent=(m.pitch*180/Math.PI).toFixed(1)+'°';
 }
 function playback(value) {
   running=value;accumulator=0;last=0;
-  $('state').textContent=sim.fallen?'Caduto · riparti dal centro':value?(sim.turn<0?'Svolta a sinistra':sim.turn>0?'Svolta a destra':sim.drive<0?'Indietro':'Avanti'):'In pausa';
+  $('state').textContent=sim.fallen?'Fallen · reset to centre':value?(sim.turn<0?'Turning left':sim.turn>0?'Turning right':sim.drive<0?'Backward':'Forward'):'Paused';
   for(const button of document.querySelectorAll('[data-drive]')){
     button.disabled=sim.fallen;
     const active=value&&Number(button.dataset.drive)===sim.drive&&Number(button.dataset.turn)===sim.turn;
@@ -39,7 +39,7 @@ function frame(now) {
 async function boot() {
   const [mj,files,gaits,xml]=await Promise.all([loadMujoco(),get('./assets/files.json'),get('./assets/gaits.json'),get('./assets/robot.xml','text')]);
   mj.FS.mkdir('/robot');mj.FS.mkdir('/robot/meshes');
-  $('load-detail').textContent='Preparazione delle geometrie CAD…';
+  $('load-detail').textContent='Preparing CAD geometry…';
   await Promise.all(files.map(async file=>mj.FS.writeFile('/robot/'+file,new Uint8Array(await get('./assets/'+file,'arrayBuffer')))));
   mj.FS.writeFile('/robot/robot.xml',xml);
   const model=mj.MjModel.from_xml_path('/robot/robot.xml');
@@ -67,4 +67,4 @@ async function boot() {
   document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseHidden();});
   playback(false);updateMetrics();requestAnimationFrame(frame);
 }
-boot().catch(error=>{$('loading').hidden=true;$('error').hidden=false;$('error').textContent='La simulazione non è disponibile: '+error.message+'. Ricarica la pagina in un browser recente con WebGL e WebAssembly.';$('state').textContent='Errore di caricamento';console.error(error);});
+boot().catch(error=>{$('loading').hidden=true;$('error').hidden=false;$('error').textContent='Simulation unavailable: '+error.message+'. Reload the page in a recent browser with WebGL and WebAssembly.';$('state').textContent='Loading error';console.error(error);});

@@ -18,7 +18,7 @@ export class Simulation {
     this.gait=gaits[0];this.rate=1;this.stride=1;this.drive=1;this.turn=0;this.turnState=0;this.turnGain=.10;
     this.dt=model.opt.timestep;
     this.controlSteps=Math.round(.02/this.dt);
-    if(model.nu!==6||Math.abs(this.controlSteps*this.dt-.02)>1e-9)throw Error('Il modello deve avere 6 servomotori e controllo a 50 Hz.');
+    if(model.nu!==6||Math.abs(this.controlSteps*this.dt-.02)>1e-9)throw Error('The model must have 6 servomotors and 50 Hz control.');
     this.sensor={};
     for(const name of ['imu_gyro','L_touch','R_touch']) {
       const accessor=model.sensor(name);this.sensor[name]=Number(accessor.adr);accessor.delete();
@@ -36,7 +36,7 @@ export class Simulation {
   }
   select(id) {
     const gait=this.gaits.find(g=>g.id===id);
-    if(!gait)throw Error('Andatura sconosciuta');
+    if(!gait)throw Error('Unknown gait');
     this.gait=gait;this.reset();
   }
   step() {
