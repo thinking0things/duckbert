@@ -24,7 +24,9 @@ The simulation also pauses when the page loses focus.
 
 The simulator imports all 32 neutral assembly meshes from `cad/out_none_v1.1_claude`,
 including the shorter body, LiPo cassette, compact hip block, ESP32-C3 shield and inward-offset
-feet. Every visible robot component uses Bordeaux red (`#800020`).
+feet. The top colour button switches between Bordeaux red (`#800020`) and a white body
+with orange feet and cyan frame, brackets and horns. Both options keep the six servos blue,
+the screen black and the eyes white. The ground has a fixed white grid at 10 cm spacing.
 
 Masses, centres of mass and inertias are derived from those meshes with solid PLA density
 (1240 kg/m³), the CAD manifest's module mass estimates, and 22 g of wiring and fasteners.

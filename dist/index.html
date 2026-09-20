@@ -12,7 +12,9 @@
 <body>
   <header>
     <a class="brand" href="./"><span class="mark" aria-hidden="true">D</span> DUCKBERT <span>HEADLESS LAB</span></a>
-    <span class="engine">MuJoCo · physics simulation</span>
+    <div class="header-actions"><span class="engine">MuJoCo · physics simulation</span>
+      <button id="palette" class="palette-button" type="button" data-palette="bordeaux" aria-label="Toggle robot colours: Bordeaux or White, Orange and Cyan" aria-pressed="false" disabled><span class="palette-swatch" aria-hidden="true"></span><span id="palette-label">Bordeaux</span></button>
+    </div>
   </header>
   <main>
     <section class="workspace" aria-label="3D simulation">
@@ -20,7 +22,7 @@
       <div id="viewport" aria-label="3D robot simulation; drag to orbit and scroll to zoom"></div>
       <div id="loading" role="status"><span class="loader"></span><strong>Preparing the robot</strong><span id="load-detail">Loading the physics engine…</span></div>
       <div id="error" role="alert" hidden></div>
-      <div class="view-bottom"><span>Drag to orbit · scroll to zoom</span><label><input id="follow" type="checkbox" checked> Follow robot</label></div>
+      <div class="view-bottom"><span>Drag to orbit · scroll to zoom · grid 10 cm</span><label><input id="follow" type="checkbox" checked> Follow robot</label></div>
       <div class="telemetry" aria-label="Simulation measurements">
         <div><span>Simulation time</span><strong id="time">0.0 <small>s</small></strong></div>
         <div><span>Distance</span><strong id="distance">0.0 <small>cm</small></strong></div>
@@ -44,7 +46,7 @@
         <div class="subheading">Body orientation <span>°</span></div>
         <div class="attitude"><span>Roll <b id="roll">0.0°</b></span><span>Pitch <b id="pitch">0.0°</b></span></div>
       </fieldset>
-      <p class="model-note">V1.1 Claude in Bordeaux red, with inward-offset feet and one walking gait. Steering adjusts the relative stride of the legs. Gravity and contacts are simulated: if the robot falls, press “Reset to centre”.</p>
+      <p class="model-note">V1.1 Claude with two colour options, with inward-offset feet and one walking gait. Steering adjusts the relative stride of the legs. Gravity and contacts are simulated: if the robot falls, press “Reset to centre”.</p>
     </aside>
   </main>
   <footer><span>THINKING THINGS / DUCKBERT</span><a id="repository" href="https://github.com/thinking0things/duckbert" target="_blank" rel="noreferrer">Code and model ↗</a></footer>

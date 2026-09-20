@@ -107,7 +107,7 @@ provenance = {
     "model_sha256": hashlib.sha256((assets/"robot.xml").read_bytes()).hexdigest(),
     "physics": "CAD mesh mass properties, solid PLA density 1240 kg/m3, module mass estimates from the CAD manifest, plus 22 g of wiring/fasteners",
     "contact": "54 x 41 mm flat sole boxes centred at y = +/-30.5 mm; printed-part convex hulls collide with the ground",
-    "colour": "Uniform Bordeaux sRGB #800020 on every visible robot component",
+    "colour": "Renderer offers Bordeaux or White/Orange/Cyan, with blue servos, black screen and white eyes in both palettes",
     "controllers": ["claude_v11_walk"],
     "controller_source": "none_oled periodic controller, validated on the imported v1.1 Claude model",
     "steering": "Hip swing amplitude asymmetry, 10 percent maximum, with slew-limited targets"

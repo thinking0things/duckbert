@@ -44,6 +44,16 @@ export async function boot() {
   mj.FS.writeFile('/robot/robot.xml',xml);
   const model=mj.MjModel.from_xml_path('/robot/robot.xml');
   sim=new Simulation(mj,model,gaits);view=createScene($('viewport'),model,sim.data);
+  let palette='bordeaux';
+  const paletteButton=$('palette');
+  paletteButton.disabled=false;
+  paletteButton.addEventListener('click',()=>{
+    palette=palette==='bordeaux'?'arctic':'bordeaux';
+    view.setPalette(palette);
+    paletteButton.dataset.palette=palette;
+    paletteButton.setAttribute('aria-pressed',String(palette==='arctic'));
+    $('palette-label').textContent=palette==='bordeaux'?'Bordeaux':'White / Orange / Cyan';
+  });
   $('controls').disabled=false;$('loading').hidden=true;
   const keys=new Set();
   const steer=(drive,turn)=>{if(sim.fallen)return;sim.drive=drive;sim.turn=turn;playback(true);};

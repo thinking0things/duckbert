@@ -40,7 +40,7 @@
   "model_sha256": "80808bc3e59746a96386c52aa0ea08ee2780dce23dfefc136bc8fd1105c53266",
   "physics": "CAD mesh mass properties, solid PLA density 1240 kg/m3, module mass estimates from the CAD manifest, plus 22 g of wiring/fasteners",
   "contact": "54 x 41 mm flat sole boxes centred at y = +/-30.5 mm; printed-part convex hulls collide with the ground",
-  "colour": "Uniform Bordeaux sRGB #800020 on every visible robot component",
+  "colour": "Renderer offers Bordeaux or White/Orange/Cyan, with blue servos, black screen and white eyes in both palettes",
   "controllers": [
     "claude_v11_walk"
   ],
