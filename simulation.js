@@ -32,6 +32,7 @@ export class Simulation {
     for(let i=0;i<150;i++)this.mj.mj_step(this.model,this.data);
     this.mj.mj_forward(this.model,this.data);
     this.startX=this.data.qpos[0];this.startY=this.data.qpos[1];this.startTime=this.data.time;
+    this.neutralControl=Float64Array.from(this.control);
     this.phaseTime=0;this.steps=0;this.fallen=false;this.settling=false;this.turnState=0;
   }
   select(id) {
@@ -44,11 +45,21 @@ export class Simulation {
     const d=this.data,m=this.model;
     if(this.steps%this.controlSteps===0) {
       const [roll,pitch]=orientation(d.qpos), adr=this.sensor.imu_gyro;
-      const target=command(this.gait.params,this.phaseTime,roll,pitch,d.sensordata.slice(adr,adr+3),this.stride);
+      const gyro=d.sensordata.slice(adr,adr+3);
+      const turningInPlace=this.drive===0&&this.turn!==0;
+      const target=this.settling?Array.from(this.neutralControl):command(this.gait.params,this.phaseTime,roll,pitch,gyro,turningInPlace?.65:this.stride);
+      if(this.settling){
+        // The initial servo angles are the neutral pose; add a small IMU hold so
+        // the body can settle without pitching over while it is still moving.
+        const pitchHold=clamp(1.3*pitch+.15*gyro[1],-.24,.24);
+        const rollHold=clamp(-1.5*roll-.12*gyro[0],-.18,.18);
+        target[1]+=pitchHold;target[4]+=pitchHold;target[0]+=rollHold;target[3]+=rollHold;
+      }
       this.turnState+=clamp((this.gait.steeringSign??1)*this.turn-this.turnState,-.06,.06);
       const mid=(target[1]+target[4])*.5;
-      target[1]=mid+(target[1]-mid)*(1+this.turnGain*this.turnState);
-      target[4]=mid+(target[4]-mid)*(1-this.turnGain*this.turnState);
+      const gain=turningInPlace?.65:this.turnGain;
+      target[1]=mid+(target[1]-mid)*(1+gain*this.turnState);
+      target[4]=mid+(target[4]-mid)*(1-gain*this.turnState);
       const maxStep=this.gait.slew*.02;
       for(let i=0;i<6;i++) {
         const next=clamp(target[i],m.actuator_ctrlrange[2*i],m.actuator_ctrlrange[2*i+1]);
@@ -56,7 +67,7 @@ export class Simulation {
       }
       d.ctrl.set(this.control);
     }
-    this.mj.mj_step(m,d);this.steps++;this.phaseTime+=this.dt*this.rate*this.drive;
+    this.mj.mj_step(m,d);this.steps++;this.phaseTime+=this.dt*this.rate*(this.drive===0&&this.turn!==0?1:this.drive);
     const [roll,pitch]=orientation(d.qpos);
     this.fallen=!Array.from(d.qpos).every(Number.isFinite)||d.qpos[2]<.05||Math.abs(roll)>1.1||Math.abs(pitch)>1.1;
   }

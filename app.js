@@ -69,7 +69,9 @@ export async function boot() {
       return;
     }
     const pressed=new Set(Array.from(keys,code=>bindings[code]));
-    steer(pressed.has('down')?-1:1,(pressed.has('right')?1:0)-(pressed.has('left')?1:0));
+    const turn=(pressed.has('right')?1:0)-(pressed.has('left')?1:0);
+    const drive=pressed.has('down')?-1:(pressed.has('up')?1:(turn?0:1));
+    steer(drive,turn);
   };
   document.addEventListener('keydown',event=>{
     if(event.code==='Space'&&!['BUTTON','INPUT'].includes(event.target.tagName)){event.preventDefault();keys.clear();playback(false);return;}
