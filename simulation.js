@@ -15,7 +15,7 @@ export function command(p,t,roll,pitch,gyro,stride=1) {
 export class Simulation {
   constructor(mj,model,gaits) {
     this.mj=mj;this.model=model;this.data=new mj.MjData(model);this.gaits=gaits;
-    this.gait=gaits[0];this.rate=1;this.stride=1;this.drive=1;this.turn=0;this.settling=false;this.turnState=0;this.turnGain=.10;
+    this.gait=gaits[0];this.rate=1;this.stride=1;this.drive=1;this.turn=0;this.settling=false;this.settleBlend=0;this.turnState=0;this.turnGain=.10;
     this.dt=model.opt.timestep;
     this.controlSteps=Math.round(.02/this.dt);
     if(model.nu!==6||Math.abs(this.controlSteps*this.dt-.02)>1e-9)throw Error('The model must have 6 servomotors and 50 Hz control.');
@@ -32,8 +32,10 @@ export class Simulation {
     for(let i=0;i<150;i++)this.mj.mj_step(this.model,this.data);
     this.mj.mj_forward(this.model,this.data);
     this.startX=this.data.qpos[0];this.startY=this.data.qpos[1];this.startTime=this.data.time;
-    this.neutralControl=Float64Array.from(this.control);
-    this.phaseTime=0;this.steps=0;this.fallen=false;this.settling=false;this.turnState=0;
+    // Use the settled keyframe pose as the stop target, rather than the raw
+    // actuator command before MuJoCo has relaxed the body onto its feet.
+    this.neutralControl=Float64Array.from(this.data.qpos.slice(7,13));
+    this.phaseTime=0;this.steps=0;this.fallen=false;this.settling=false;this.settleBlend=0;this.turnState=0;
   }
   select(id) {
     const gait=this.gaits.find(g=>g.id===id);
@@ -47,8 +49,15 @@ export class Simulation {
       const [roll,pitch]=orientation(d.qpos), adr=this.sensor.imu_gyro;
       const gyro=d.sensordata.slice(adr,adr+3);
       const turningInPlace=this.drive===0&&this.turn!==0;
-      const target=this.settling?Array.from(this.neutralControl):command(this.gait.params,this.phaseTime,roll,pitch,gyro,turningInPlace?.65:this.stride);
+      const settlingStride=this.settling?this.stride*(1-this.settleBlend):this.stride;
+      const walkingTarget=command(this.gait.params,this.phaseTime,roll,pitch,gyro,turningInPlace?.55:settlingStride);
+      const target=walkingTarget;
       if(this.settling){
+        const balanced=d.sensordata[this.sensor.L_touch]>.03&&d.sensordata[this.sensor.R_touch]>.03;
+        if(balanced)this.settleBlend=Math.min(1,this.settleBlend+.001);
+        if(this.settleBlend>.9)for(let i=0;i<6;i++)target[i]=this.neutralControl[i];
+      }
+      if(this.settling&&this.settleBlend>.8){
         // The initial servo angles are the neutral pose; add a small IMU hold so
         // the body can settle without pitching over while it is still moving.
         const pitchHold=clamp(1.3*pitch+.15*gyro[1],-.24,.24);
@@ -57,7 +66,7 @@ export class Simulation {
       }
       this.turnState+=clamp((this.gait.steeringSign??1)*this.turn-this.turnState,-.06,.06);
       const mid=(target[1]+target[4])*.5;
-      const gain=turningInPlace?.65:this.turnGain;
+      const gain=turningInPlace?1.0:this.turnGain;
       target[1]=mid+(target[1]-mid)*(1+gain*this.turnState);
       target[4]=mid+(target[4]-mid)*(1-gain*this.turnState);
       const maxStep=this.gait.slew*.02;
@@ -67,7 +76,9 @@ export class Simulation {
       }
       d.ctrl.set(this.control);
     }
-    this.mj.mj_step(m,d);this.steps++;this.phaseTime+=this.dt*this.rate*(this.drive===0&&this.turn!==0?1:this.drive);
+    this.mj.mj_step(m,d);this.steps++;
+    const settlingStride=this.settling&&this.settleBlend===0?1:0;
+    this.phaseTime+=this.dt*this.rate*(this.drive===0&&this.turn!==0?1:this.drive||settlingStride);
     const [roll,pitch]=orientation(d.qpos);
     this.fallen=!Array.from(d.qpos).every(Number.isFinite)||d.qpos[2]<.05||Math.abs(roll)>1.1||Math.abs(pitch)>1.1;
   }

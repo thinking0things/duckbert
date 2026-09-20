@@ -65,7 +65,7 @@ export async function boot() {
     if(!keys.size){
       // Keep advancing physics while the gait controller returns to phase zero.
       // This is a neutral stop, distinct from pausing the simulation clock.
-      if(!sim.fallen){sim.settling=true;sim.drive=0;sim.turn=0;sim.phaseTime=0;playback(true);}
+      if(!sim.fallen){sim.settling=true;sim.settleBlend=0;sim.drive=1;sim.turn=0;playback(true);}
       return;
     }
     const pressed=new Set(Array.from(keys,code=>bindings[code]));
