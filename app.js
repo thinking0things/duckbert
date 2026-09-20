@@ -62,7 +62,9 @@ export async function boot() {
   $('reset').addEventListener('click',()=>{keys.clear();sim.drive=1;sim.turn=0;sim.reset();playback(false);updateMetrics();});
   const bindings={KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right'};
   const keyboard=()=>{
-    if(!keys.size){playback(false);return;}
+    // Releasing the last key leaves the last selected motion running.
+    // Pause remains an explicit action (the centre button or Space).
+    if(!keys.size)return;
     const pressed=new Set(Array.from(keys,code=>bindings[code]));
     steer(pressed.has('down')?-1:1,(pressed.has('right')?1:0)-(pressed.has('left')?1:0));
   };
