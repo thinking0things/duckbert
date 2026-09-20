@@ -15,7 +15,7 @@ export function command(p,t,roll,pitch,gyro,stride=1) {
 export class Simulation {
   constructor(mj,model,gaits) {
     this.mj=mj;this.model=model;this.data=new mj.MjData(model);this.gaits=gaits;
-    this.gait=gaits[0];this.rate=1;this.stride=1;this.drive=1;this.turn=0;this.turnState=0;this.turnGain=.10;
+    this.gait=gaits[0];this.rate=1;this.stride=1;this.drive=1;this.turn=0;this.settling=false;this.turnState=0;this.turnGain=.10;
     this.dt=model.opt.timestep;
     this.controlSteps=Math.round(.02/this.dt);
     if(model.nu!==6||Math.abs(this.controlSteps*this.dt-.02)>1e-9)throw Error('The model must have 6 servomotors and 50 Hz control.');
@@ -32,7 +32,7 @@ export class Simulation {
     for(let i=0;i<150;i++)this.mj.mj_step(this.model,this.data);
     this.mj.mj_forward(this.model,this.data);
     this.startX=this.data.qpos[0];this.startY=this.data.qpos[1];this.startTime=this.data.time;
-    this.phaseTime=0;this.steps=0;this.fallen=false;this.turnState=0;
+    this.phaseTime=0;this.steps=0;this.fallen=false;this.settling=false;this.turnState=0;
   }
   select(id) {
     const gait=this.gaits.find(g=>g.id===id);

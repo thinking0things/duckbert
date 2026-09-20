@@ -18,7 +18,7 @@ function updateMetrics() {
 }
 function playback(value) {
   running=value;accumulator=0;last=0;
-  $('state').textContent=sim.fallen?'Fallen · reset to centre':value?(sim.turn<0?'Turning left':sim.turn>0?'Turning right':sim.drive<0?'Backward':'Forward'):'Paused';
+  $('state').textContent=sim.fallen?'Fallen · reset to centre':value?(sim.settling?'Returning to neutral':sim.turn<0?'Turning left':sim.turn>0?'Turning right':sim.drive<0?'Backward':'Forward'):'Paused';
   for(const button of document.querySelectorAll('[data-drive]')){
     button.disabled=sim.fallen;
     const active=value&&Number(button.dataset.drive)===sim.drive&&Number(button.dataset.turn)===sim.turn;
@@ -56,15 +56,18 @@ export async function boot() {
   });
   $('controls').disabled=false;$('loading').hidden=true;
   const keys=new Set();
-  const steer=(drive,turn)=>{if(sim.fallen)return;sim.drive=drive;sim.turn=turn;playback(true);};
+  const steer=(drive,turn)=>{if(sim.fallen)return;sim.settling=false;sim.drive=drive;sim.turn=turn;playback(true);};
   for(const button of document.querySelectorAll('[data-drive]'))button.addEventListener('click',()=>steer(Number(button.dataset.drive),Number(button.dataset.turn)));
   $('pause').addEventListener('click',()=>{keys.clear();playback(false);});
   $('reset').addEventListener('click',()=>{keys.clear();sim.drive=1;sim.turn=0;sim.reset();playback(false);updateMetrics();});
   const bindings={KeyW:'up',ArrowUp:'up',KeyS:'down',ArrowDown:'down',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right'};
   const keyboard=()=>{
-    // Releasing the last key leaves the last selected motion running.
-    // Pause remains an explicit action (the centre button or Space).
-    if(!keys.size)return;
+    if(!keys.size){
+      // Keep advancing physics while the gait controller returns to phase zero.
+      // This is a neutral stop, distinct from pausing the simulation clock.
+      if(!sim.fallen){sim.settling=true;sim.drive=0;sim.turn=0;sim.phaseTime=0;playback(true);}
+      return;
+    }
     const pressed=new Set(Array.from(keys,code=>bindings[code]));
     steer(pressed.has('down')?-1:1,(pressed.has('right')?1:0)-(pressed.has('left')?1:0));
   };
