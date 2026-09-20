@@ -10,14 +10,14 @@ This is a standalone simulation with no connection to the physical robot.
 
 - **W / ↑**: walk forward.
 - **S / ↓**: walk backward by reversing the phase of the same gait.
-- **A / ←** and **D / →**: turn left or right while walking.
+- **A / ←** and **D / →**: rotate left or right in place.
 - **Space**: pause the simulation.
 - With a mouse or touchscreen, tap a direction to keep moving; use **Pause** to freeze the simulation.
 - **Reset to centre**: restore the starting position, orientation and gait phase.
 - Drag to orbit the camera; scroll or pinch to zoom.
 
-Directions are relative to the robot. Left and right produce curved turns rather than sideways
-steps. Pausing freezes simulation time; it is not a physical stopping controller.
+Directions are relative to the robot. Left and right rotate in place; combine them with W or ↑
+for a walking turn. Pausing freezes simulation time; it is not a physical stopping controller.
 The simulation also pauses when the page loses focus.
 
 ## Model and controller
