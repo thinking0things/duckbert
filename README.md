@@ -62,6 +62,12 @@ npm run serve
 Open `http://127.0.0.1:8768`. The `dist/` folder includes all runtime dependencies and can also
 be served by any static HTTP server. No API keys or backend are required.
 
+## Run locally in MuJoCo
+
+The repository also includes a native MuJoCo runner and English setup instructions in
+[`mujoco/README.md`](mujoco/README.md). Install the Python dependency, then run
+`python mujoco/run_viewer.py` to open the v1.1 Claude model in MuJoCo's interactive viewer.
+
 ## GitHub Pages
 
 The `main` branch contains source code, tests, data and pinned dependencies. The `gh-pages`
