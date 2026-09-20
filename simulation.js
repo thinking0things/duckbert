@@ -45,7 +45,7 @@ export class Simulation {
     if(this.steps%this.controlSteps===0) {
       const [roll,pitch]=orientation(d.qpos), adr=this.sensor.imu_gyro;
       const target=command(this.gait.params,this.phaseTime,roll,pitch,d.sensordata.slice(adr,adr+3),this.stride);
-      this.turnState+=clamp(this.turn-this.turnState,-.06,.06);
+      this.turnState+=clamp((this.gait.steeringSign??1)*this.turn-this.turnState,-.06,.06);
       const mid=(target[1]+target[4])*.5;
       target[1]=mid+(target[1]-mid)*(1+this.turnGain*this.turnState);
       target[4]=mid+(target[4]-mid)*(1-this.turnGain*this.turnState);
