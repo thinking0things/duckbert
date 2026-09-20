@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
-  <title id="title">Duckbert v1.1 Claude walking simulation</title>
+  <title id="title">Duckbert v1.1 walking simulation</title>
   <desc id="desc">A Bordeaux red headless robot with blue servos, a black screen and white eyes on a white perspective grid.</desc>
   <defs>
     <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#263b4c"/><stop offset="1" stop-color="#101820"/></linearGradient>
@@ -35,7 +35,7 @@
     <path d="M755 575H885L870 540H755Z" fill="#a0002a"/>
   </g>
   <g font-family="Inter,Arial,sans-serif" fill="#f2f4f6">
-    <text x="58" y="75" font-size="22" letter-spacing="6" fill="#ff974f">DUCKBERT / V1.1 CLAUDE</text>
+    <text x="58" y="75" font-size="22" letter-spacing="6" fill="#ff974f">DUCKBERT / V1.1</text>
     <text x="58" y="115" font-size="42" font-weight="600">Headless walking simulation</text>
     <text x="58" y="625" font-size="16" fill="#acb8c4">MuJoCo physics · 6 SG90 servos · inward-offset flat feet · 10 cm grid</text>
   </g>
