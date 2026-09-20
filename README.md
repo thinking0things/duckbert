@@ -68,6 +68,13 @@ git branch -D pages-release
 In Settings → Pages, select the `gh-pages` branch and the `/` folder.
 Imports and assets use relative paths compatible with the project URL.
 
+MuJoCo's threaded WebAssembly runtime requires cross-origin isolation. On GitHub Pages,
+a project-scoped service worker adds the required COOP/COEP headers and reloads the page
+once on the first visit. It does not cache assets or handle requests outside this origin.
+Startup checks isolation before importing the engine and reports setup or loading failures
+instead of leaving the loading screen indefinitely. Use HTTPS or localhost and a browser
+that supports service workers and shared WebAssembly memory.
+
 ## Provenance and third-party licences
 
 - Physics: [Google DeepMind MuJoCo](https://github.com/google-deepmind/mujoco), official

@@ -36,7 +36,7 @@ function frame(now) {
   if(now-lastMetric>120){updateMetrics();lastMetric=now;}
   requestAnimationFrame(frame);
 }
-async function boot() {
+export async function boot() {
   const [mj,files,gaits,xml]=await Promise.all([loadMujoco(),get('./assets/files.json'),get('./assets/gaits.json'),get('./assets/robot.xml','text')]);
   mj.FS.mkdir('/robot');mj.FS.mkdir('/robot/meshes');
   $('load-detail').textContent='Preparing CAD geometry…';
@@ -67,4 +67,3 @@ async function boot() {
   document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseHidden();});
   playback(false);updateMetrics();requestAnimationFrame(frame);
 }
-boot().catch(error=>{$('loading').hidden=true;$('error').hidden=false;$('error').textContent='Simulation unavailable: '+error.message+'. Reload the page in a recent browser with WebGL and WebAssembly.';$('state').textContent='Loading error';console.error(error);});
