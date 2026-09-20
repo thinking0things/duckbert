@@ -22,12 +22,21 @@ The simulation also pauses when the page loses focus.
 
 ## Model and controller
 
-The baseline model is `microduck9_none_feet_in.xml`: the headless configuration with inward-facing
-feet used to train the `walk_feetin_mid` gait. Meshes are frozen from the compatible
-`shell160_pre_tof` archive because the main CAD folder was subsequently modified.
-This simulation uses that baseline, not the unfinished CAD v1.1/v1.2 revisions.
+The simulator imports all 32 neutral assembly meshes from `cad/out_none_v1.1_claude`,
+including the shorter body, LiPo cassette, compact hip block, ESP32-C3 shield and inward-offset
+feet. Every visible robot component uses Bordeaux red (`#800020`).
 
-The periodic controller is ported from `gait9.py`, with position commands at 50 Hz, torque limits
+Masses, centres of mass and inertias are derived from those meshes with solid PLA density
+(1240 kg/m³), the CAD manifest's module mass estimates, and 22 g of wiring and fasteners.
+These remain estimates, especially battery weight and printed infill. The flat 54 × 41 mm
+sole contacts are centred at ±30.5 mm. Joint limits come from the v1.1 Claude manifest.
+Ground collisions use convex hulls for the printed parts and boxes for the soles; link-to-link
+collisions are not simulated.
+
+The single `claude_v11_walk` gait uses the existing `none_oled` periodic controller, selected
+after testing it on the imported model. Its steering sign is calibrated to this gait.
+
+The controller implementation is ported from `gait9.py`, with position commands at 50 Hz, torque limits
 and command slew limits. Steering varies the relative hip swing amplitude by up to 10%.
 Backward movement reverses the same periodic trajectory. The controller does not directly
 set the free body's position or orientation, or apply artificial steering forces.
@@ -86,3 +95,10 @@ that supports service workers and shared WebAssembly memory.
   upstream meshes are not included in this repository.
 
 Model provenance is recorded in `dist/assets/provenance.json`.
+
+## Reimporting CAD
+
+With Python, NumPy and trimesh installed, run
+`python scripts/import-cad.py /path/to/out_none_v1.1_claude` and then `npm test`.
+The importer uses neutral assembly exports, copies each STL unchanged, rebuilds mass properties
+and collision placement, and records mesh checksums in the provenance file.

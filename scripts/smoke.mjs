@@ -1,5 +1,6 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import loadMujoco from '@mujoco/mujoco';
 import {Simulation,command} from '../dist/simulation.js';
 const root=new URL('../',import.meta.url);
@@ -8,6 +9,19 @@ mj.FS.mkdir('/robot');mj.FS.mkdir('/robot/meshes');
 for(const file of JSON.parse(await readFile(new URL('dist/assets/files.json',root),'utf8')))mj.FS.writeFile('/robot/'+file,new Uint8Array(await readFile(new URL('dist/assets/'+file,root))));
 mj.FS.writeFile('/robot/robot.xml',await readFile(new URL('dist/assets/robot.xml',root),'utf8'));
 const model=mj.MjModel.from_xml_path('/robot/robot.xml');
+const provenance=JSON.parse(await readFile(new URL('dist/assets/provenance.json',root),'utf8'));
+assert.equal(provenance.cad_revision,'out_none_v1.1_claude');
+assert.equal(createHash('sha256').update(await readFile(new URL('dist/assets/robot.xml',root))).digest('hex'),provenance.model_sha256);
+for(const [name,hash] of Object.entries(provenance.mesh_sha256))
+  assert.equal(createHash('sha256').update(await readFile(new URL('dist/assets/meshes/'+name,root))).digest('hex'),hash,'CAD mesh changed: '+name);
+assert.equal(Object.keys(provenance.mesh_sha256).length,32);
+assert(provenance.mesh_sha256['15_lipo_cassette.stl']);
+assert(provenance.mesh_sha256['ESP32_C3_shield_envelope.stl']);
+for(let i=0;i<model.ngeom;i++)if(model.geom_group[i]===1){
+  const rgba=model.geom_rgba.slice(4*i,4*i+4);
+  assert(Math.abs(rgba[0]-.2158605)<1e-6&&rgba[1]===0&&Math.abs(rgba[2]-.01444384)<1e-6&&rgba[3]===1,'Every robot visual must be Bordeaux red');
+}
+
 const gaits=JSON.parse(await readFile(new URL('dist/assets/gaits.json',root),'utf8'));
 const sim=new Simulation(mj,model,gaits);
 const reports=[];
