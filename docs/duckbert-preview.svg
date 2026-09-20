@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+  <title id="title">Duckbert v1.1 Claude walking simulation</title>
+  <desc id="desc">A Bordeaux red headless robot with blue servos, a black screen and white eyes on a white perspective grid.</desc>
+  <defs>
+    <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#263b4c"/><stop offset="1" stop-color="#101820"/></linearGradient>
+    <linearGradient id="body" x2="0" y2="1"><stop stop-color="#a0002a"/><stop offset="1" stop-color="#650019"/></linearGradient>
+    <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#fff" stroke-opacity=".38"/></pattern>
+    <filter id="shadow"><feGaussianBlur stdDeviation="10"/></filter>
+  </defs>
+  <rect width="1200" height="680" fill="url(#bg)"/>
+  <path d="M0 520L1200 430V680H0Z" fill="#15232d"/>
+  <path d="M0 520L1200 430V680H0Z" fill="url(#grid)" transform="skewY(-4)"/>
+  <ellipse cx="590" cy="565" rx="245" ry="35" fill="#000" opacity=".35" filter="url(#shadow)"/>
+  <g stroke="#080b10" stroke-width="8" stroke-linejoin="round">
+    <!-- body -->
+    <path d="M430 170Q430 145 455 140H725Q750 145 750 170V365Q750 390 725 395H455Q430 390 430 365Z" fill="url(#body)"/>
+    <path d="M455 140H725L705 105H475Z" fill="#b0002d"/>
+    <!-- screen -->
+    <rect x="493" y="180" width="194" height="95" rx="10" fill="#050608"/>
+    <ellipse cx="548" cy="228" rx="16" ry="23" fill="#fff" stroke="none"/>
+    <ellipse cx="632" cy="228" rx="16" ry="23" fill="#fff" stroke="none"/>
+    <!-- servo blocks -->
+    <g fill="#1765d1">
+      <rect x="394" y="300" width="62" height="65" rx="10"/>
+      <rect x="724" y="300" width="62" height="65" rx="10"/>
+      <rect x="407" y="350" width="55" height="65" rx="10"/>
+      <rect x="738" y="350" width="55" height="65" rx="10"/>
+    </g>
+    <!-- legs -->
+    <path d="M430 375L370 475L435 500L495 405Z" fill="url(#body)"/>
+    <path d="M750 375L810 475L745 500L685 405Z" fill="url(#body)"/>
+    <path d="M375 470L350 555L420 555L440 495Z" fill="url(#body)"/>
+    <path d="M805 470L830 555L760 555L740 495Z" fill="url(#body)"/>
+    <path d="M330 540H445L465 575H315Z" fill="#a0002a"/>
+    <path d="M755 575H885L870 540H755Z" fill="#a0002a"/>
+  </g>
+  <g font-family="Inter,Arial,sans-serif" fill="#f2f4f6">
+    <text x="58" y="75" font-size="22" letter-spacing="6" fill="#ff974f">DUCKBERT / V1.1 CLAUDE</text>
+    <text x="58" y="115" font-size="42" font-weight="600">Headless walking simulation</text>
+    <text x="58" y="625" font-size="16" fill="#acb8c4">MuJoCo physics · 6 SG90 servos · inward-offset flat feet · 10 cm grid</text>
+  </g>
+</svg>

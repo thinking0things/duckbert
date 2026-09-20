@@ -2,6 +2,8 @@
 
 **[Open the simulation](https://thinking0things.github.io/duckbert/)**
 
+![Duckbert v1.1 Claude preview](docs/duckbert-preview.svg)
+
 A headless SG90 robot with one walking gait and directional controls in the browser.
 MuJoCo simulates gravity, contacts and six servomotors; Three.js renders the CAD meshes.
 This is a standalone simulation with no connection to the physical robot.
