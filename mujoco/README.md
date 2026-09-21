@@ -1,6 +1,6 @@
 # Run Duckbert in MuJoCo
 
-This folder explains how to run the same Duckbert v1.1 Claude model locally with the official
+This folder explains how to run the same Duckbert v1.1 model locally with the official
 Python MuJoCo bindings. The XML model and STL files are kept in `../dist/assets/`, so the native
 viewer and the browser use the same geometry and physics asset.
 
@@ -28,14 +28,14 @@ The shortest path opens MuJoCo's native interactive viewer:
 python -m mujoco.viewer --mjcf dist/assets/robot.xml
 ```
 
-Use the viewer's mouse controls to orbit and inspect the robot. The model includes the v1.1 Claude
+Use the viewer's mouse controls to orbit and inspect the robot. The model includes the v1.1
 body, LiPo cassette, inward-offset flat feet, blue servo hardware, black OLED screen and white eyes.
 The visible mesh palette is a renderer choice; MuJoCo uses the RGBA values stored in the XML.
 
 ## Run the walking example
 
 `run_viewer.py` launches a passive viewer and drives the six position actuators with the same
-`claude_v11_walk` gait used by Duckbert. Close the viewer window to exit.
+`v11_walk` gait used by Duckbert. Close the viewer window to exit.
 
 ```sh
 python mujoco/run_viewer.py
@@ -63,7 +63,7 @@ when copying the asset elsewhere. If you copy only the XML, mesh loading will fa
 
 ## Asset and controller notes
 
-- `dist/assets/robot.xml` is the v1.1 Claude six-servo model.
+- `dist/assets/robot.xml` is the v1.1 six-servo model.
 - `dist/assets/meshes/` contains the 32 neutral assembly STL files.
 - `dist/assets/gaits.json` contains the browser gait parameters.
 - `dist/assets/provenance.json` records the CAD revision and mesh checksums.

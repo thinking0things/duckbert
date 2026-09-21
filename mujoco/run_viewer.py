@@ -1,4 +1,4 @@
-"""Run the Duckbert v1.1 Claude walking example in the native MuJoCo viewer."""
+"""Run the Duckbert v1.1 walking example in the native MuJoCo viewer."""
 
 from __future__ import annotations
 

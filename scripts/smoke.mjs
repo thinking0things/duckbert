@@ -10,7 +10,7 @@ for(const file of JSON.parse(await readFile(new URL('dist/assets/files.json',roo
 mj.FS.writeFile('/robot/robot.xml',await readFile(new URL('dist/assets/robot.xml',root),'utf8'));
 const model=mj.MjModel.from_xml_path('/robot/robot.xml');
 const provenance=JSON.parse(await readFile(new URL('dist/assets/provenance.json',root),'utf8'));
-assert.equal(provenance.cad_revision,'out_none_v1.1_claude');
+assert.equal(provenance.cad_revision,'out_none_v1.1');
 assert.equal(createHash('sha256').update(await readFile(new URL('dist/assets/robot.xml',root))).digest('hex'),provenance.model_sha256);
 for(const [name,hash] of Object.entries(provenance.mesh_sha256))
   assert.equal(createHash('sha256').update(await readFile(new URL('dist/assets/meshes/'+name,root))).digest('hex'),hash,'CAD mesh changed: '+name);

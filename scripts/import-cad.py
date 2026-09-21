@@ -1,5 +1,5 @@
-"""Import neutral assembly STL exports from the v1.1 Claude CAD folder.
-Usage: python scripts/import-cad.py /path/to/out_none_v1.1_claude
+"""Import neutral assembly STL exports from the v1.1 CAD folder.
+Usage: python scripts/import-cad.py /path/to/out_none_v1.1
 Requires numpy and trimesh for CAD-derived mass properties.
 """
 import hashlib
@@ -17,7 +17,7 @@ assets = Path(__file__).resolve().parents[1] / "dist/assets"
 manifest = json.loads((source / "manifest.json").read_text())
 tree = E.parse(assets / "robot.xml")
 root = tree.getroot()
-root.set("model", "Duckbert v1.1 Claude - 6 SG90")
+root.set("model", "Duckbert v1.1 - 6 SG90")
 root.find("compiler").set("meshdir", "meshes")
 asset = root.find("asset")
 asset.clear()
@@ -99,17 +99,17 @@ for path in (assets / "meshes").glob("*.stl"):
         path.unlink()
 (assets / "files.json").write_text(json.dumps(files, indent=2)+"\n")
 provenance = {
-    "model": "Duckbert v1.1 Claude",
-    "cad_revision": "out_none_v1.1_claude",
-    "visual_meshes": "Unmodified neutral assembly_meshes STL exports from the v1.1 Claude CAD folder",
+    "model": "Duckbert v1.1",
+    "cad_revision": "out_none_v1.1",
+    "visual_meshes": "Unmodified neutral assembly_meshes STL exports from the v1.1 CAD folder",
     "mesh_sha256": hashes,
     "manifest_sha256": hashlib.sha256((source/"manifest.json").read_bytes()).hexdigest(),
     "model_sha256": hashlib.sha256((assets/"robot.xml").read_bytes()).hexdigest(),
     "physics": "CAD mesh mass properties, solid PLA density 1240 kg/m3, module mass estimates from the CAD manifest, plus 22 g of wiring/fasteners",
     "contact": "54 x 41 mm flat sole boxes centred at y = +/-30.5 mm; printed-part convex hulls collide with the ground",
     "colour": "Renderer offers Bordeaux or White/Orange/Cyan, with blue servos, black screen and white eyes in both palettes",
-    "controllers": ["claude_v11_walk"],
-    "controller_source": "none_oled periodic controller, validated on the imported v1.1 Claude model",
+    "controllers": ["v11_walk"],
+    "controller_source": "none_oled periodic controller, validated on the imported v1.1 model",
     "steering": "Hip swing amplitude asymmetry, 10 percent maximum, with slew-limited targets"
 }
 (assets / "provenance.json").write_text(json.dumps(provenance,indent=2)+"\n")
