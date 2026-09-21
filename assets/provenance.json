@@ -1,7 +1,7 @@
 {
-  "model": "Duckbert v1.1 Claude",
-  "cad_revision": "out_none_v1.1_claude",
-  "visual_meshes": "Unmodified neutral assembly_meshes STL exports from the v1.1 Claude CAD folder",
+  "model": "Duckbert v1.1",
+  "cad_revision": "out_none_v1.1",
+  "visual_meshes": "Unmodified neutral assembly_meshes STL exports from the v1.1 CAD folder",
   "mesh_sha256": {
     "01_trunk_tub.stl": "556281144c2fb33eccc7c21e4b6f26a92001fe83af092268547fff3d04fde972",
     "02_trunk_lid.stl": "287ba74a0a2bd2b9b392f5d575057911670c74d4b3de9af9a2fba25cb61f0669",
@@ -37,13 +37,13 @@
     "OLED_eye_L.stl": "34d4c9bac786a3619b5218035ba29ca4d1a9ba485d3f50be04c51b38bcc27990"
   },
   "manifest_sha256": "56ef8a6af2e844cc0e042d9ab16ed0e64049f7d72c7998d5c259150bf5babd08",
-  "model_sha256": "80808bc3e59746a96386c52aa0ea08ee2780dce23dfefc136bc8fd1105c53266",
+  "model_sha256": "ccef19e5721553d04ed889b0f036c5edb67005b72fec9e6549101b70ec784bf9",
   "physics": "CAD mesh mass properties, solid PLA density 1240 kg/m3, module mass estimates from the CAD manifest, plus 22 g of wiring/fasteners",
   "contact": "54 x 41 mm flat sole boxes centred at y = +/-30.5 mm; printed-part convex hulls collide with the ground",
   "colour": "Renderer offers Bordeaux or White/Orange/Cyan, with blue servos, black screen and white eyes in both palettes",
   "controllers": [
-    "claude_v11_walk"
+    "v11_walk"
   ],
   "steering": "Hip swing amplitude asymmetry, 10 percent maximum, with slew-limited targets",
-  "controller_source": "none_oled periodic controller, validated on the imported v1.1 Claude model"
+  "controller_source": "none_oled periodic controller, validated on the imported v1.1 model"
 }

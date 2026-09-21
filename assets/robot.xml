@@ -1,4 +1,4 @@
-<mujoco model="Duckbert v1.1 Claude - 6 SG90">
+<mujoco model="Duckbert v1.1 - 6 SG90">
   <compiler angle="degree" meshdir="meshes" />
   <option timestep=".002" gravity="0 0 -9.81" integrator="implicitfast" />
   <visual>
