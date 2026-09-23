@@ -50,6 +50,10 @@ engine, checking that the robot stays upright and turns in the expected directio
 nominal checks, not a stability guarantee for every sequence: prolonged turns, changes of direction
 or numerical differences can cause falls. Backward movement may drift.
 
+This flat-sole, no-ankle geometry is also the wall the walk runs into: see
+[`docs/walking-limits.md`](docs/walking-limits.md) for what that costs it, in millimetres, and
+the two unbuilt changes with the most headroom.
+
 ## Local development
 
 Requires Node.js 22+ and Python 3 for the static server.
