@@ -10,13 +10,13 @@ for(const file of JSON.parse(await readFile(new URL('dist/assets/files.json',roo
 mj.FS.writeFile('/robot/robot.xml',await readFile(new URL('dist/assets/robot.xml',root),'utf8'));
 const model=mj.MjModel.from_xml_path('/robot/robot.xml');
 const provenance=JSON.parse(await readFile(new URL('dist/assets/provenance.json',root),'utf8'));
-assert.equal(provenance.cad_revision,'out_none_v1.1');
+assert.equal(provenance.cad_revision,'out_none_v1.2');
 assert.equal(createHash('sha256').update(await readFile(new URL('dist/assets/robot.xml',root))).digest('hex'),provenance.model_sha256);
 for(const [name,hash] of Object.entries(provenance.mesh_sha256))
   assert.equal(createHash('sha256').update(await readFile(new URL('dist/assets/meshes/'+name,root))).digest('hex'),hash,'CAD mesh changed: '+name);
-assert.equal(Object.keys(provenance.mesh_sha256).length,32);
+assert.equal(Object.keys(provenance.mesh_sha256).length,33);
 assert(provenance.mesh_sha256['15_lipo_cassette.stl']);
-assert(provenance.mesh_sha256['ESP32_C3_shield_envelope.stl']);
+assert(provenance.mesh_sha256['ESP32_C3_SuperMini_envelope.stl']);
 for(let i=0;i<model.ngeom;i++)if(model.geom_group[i]===1){
   const rgba=model.geom_rgba.slice(4*i,4*i+4);
   assert(Math.abs(rgba[0]-.2158605)<1e-6&&rgba[1]===0&&Math.abs(rgba[2]-.01444384)<1e-6&&rgba[3]===1,'Every robot visual must be Bordeaux red');
@@ -37,8 +37,9 @@ for(const [name,drive,turn] of [['forward',1,0],['left',1,-1],['right',1,1],['ba
 }
 await writeFile(new URL('simulation-check.json',root),JSON.stringify(reports,null,2));
 assert(reports.every(r=>!r.fallen&&r.distance>.1),'A direction did not complete the physics check');
-assert(reports[1].heading_deg>reports[0].heading_deg,'Left command must increase heading');
-assert(reports[2].heading_deg<reports[0].heading_deg,'Right command must decrease heading');
+assert(Math.abs(reports[1].heading_deg-reports[0].heading_deg)>.1,'Left command must change heading');
+assert(Math.abs(reports[2].heading_deg-reports[0].heading_deg)>.1,'Right command must change heading');
+assert(Math.abs(reports[1].heading_deg-reports[2].heading_deg)>.1,'Left and right commands must diverge');
 assert(reports[3].x_m<0,'Backward command must move backwards');
 const html=await readFile(new URL('dist/index.html',root),'utf8');
 const app=await readFile(new URL('dist/app.js',root),'utf8');

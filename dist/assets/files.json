@@ -23,12 +23,13 @@
   "meshes/R_hip_pitch_stock_horn.stl",
   "meshes/R_knee.stl",
   "meshes/R_knee_stock_horn.stl",
-  "meshes/ESP32_C3_shield_envelope.stl",
+  "meshes/PCA9685_driver_envelope.stl",
+  "meshes/ESP32_C3_SuperMini_envelope.stl",
   "meshes/regulator_5V_envelope.stl",
   "meshes/IMU_GY521_envelope.stl",
-  "meshes/battery_lipo_envelope.stl",
+  "meshes/battery_lipo_65x55x10.stl",
   "meshes/OLED_1in3_envelope.stl",
   "meshes/OLED_screen.stl",
-  "meshes/OLED_eye_R.stl",
-  "meshes/OLED_eye_L.stl"
+  "meshes/OLED_eye_L.stl",
+  "meshes/OLED_eye_R.stl"
 ]

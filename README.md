@@ -2,7 +2,7 @@
 
 **[Open the simulation](https://thinking0things.github.io/duckbert/)**
 
-![Duckbert v1.1 preview](docs/duckbert-preview.svg)
+![Duckbert v1.2 preview](docs/duckbert-preview.svg)
 
 A headless SG90 robot with one walking gait and directional controls in the browser.
 MuJoCo simulates gravity, contacts and six servomotors; Three.js renders the CAD meshes.
@@ -24,7 +24,7 @@ The simulation also pauses when the page loses focus.
 
 ## Model and controller
 
-The simulator imports all 32 neutral assembly meshes from `cad/out_none_v1.1`,
+The simulator imports the neutral assembly meshes from `cad/out_none_v1.2`,
 including the shorter body, LiPo cassette, compact hip block, ESP32-C3 shield and inward-offset
 feet. The top colour button switches between Bordeaux red (`#800020`) and a white body
 with orange feet and cyan frame, brackets and horns. Both options keep the six servos blue,
@@ -33,7 +33,7 @@ the screen black and the eyes white. The ground has a fixed white grid at 10 cm 
 Masses, centres of mass and inertias are derived from those meshes with solid PLA density
 (1240 kg/m³), the CAD manifest's module mass estimates, and 22 g of wiring and fasteners.
 These remain estimates, especially battery weight and printed infill. The flat 54 × 41 mm
-sole contacts are centred at ±30.5 mm. Joint limits come from the v1.1 manifest.
+sole contacts are centred at ±32.5 mm. Joint limits come from the v1.2 manifest.
 Ground collisions use convex hulls for the printed parts and boxes for the soles; link-to-link
 collisions are not simulated.
 
@@ -72,7 +72,7 @@ be served by any static HTTP server. No API keys or backend are required.
 
 The repository also includes a native MuJoCo runner and English setup instructions in
 [`mujoco/README.md`](mujoco/README.md). Install the Python dependency, then run
-`python mujoco/run_viewer.py` to open the v1.1 model in MuJoCo's interactive viewer.
+`python mujoco/run_viewer.py` to open the v1.2 model in MuJoCo's interactive viewer.
 
 ## GitHub Pages
 
@@ -113,6 +113,6 @@ Model provenance is recorded in `dist/assets/provenance.json`.
 ## Reimporting CAD
 
 With Python, NumPy and trimesh installed, run
-`python scripts/import-cad.py /path/to/out_none_v1.1` and then `npm test`.
+`python scripts/import-cad.py /path/to/out_none_v1.2` and then `npm test`.
 The importer uses neutral assembly exports, copies each STL unchanged, rebuilds mass properties
 and collision placement, and records mesh checksums in the provenance file.

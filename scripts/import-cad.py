@@ -1,5 +1,5 @@
-"""Import neutral assembly STL exports from the v1.1 CAD folder.
-Usage: python scripts/import-cad.py /path/to/out_none_v1.1
+"""Import neutral assembly STL exports from a CAD revision.
+Usage: python scripts/import-cad.py /path/to/out_none_v1.2
 Requires numpy and trimesh for CAD-derived mass properties.
 """
 import hashlib
@@ -13,11 +13,13 @@ import numpy as np
 import trimesh
 
 source = Path(sys.argv[1]).resolve()
+revision = source.name.replace("out_none_", "")
+dimensions = json.loads((source / "dimensions.json").read_text()) if (source / "dimensions.json").exists() else {}
 assets = Path(__file__).resolve().parents[1] / "dist/assets"
 manifest = json.loads((source / "manifest.json").read_text())
 tree = E.parse(assets / "robot.xml")
 root = tree.getroot()
-root.set("model", "Duckbert v1.1 - 6 SG90")
+root.set("model", f"Duckbert {revision} - 6 SG90")
 root.find("compiler").set("meshdir", "meshes")
 asset = root.find("asset")
 asset.clear()
@@ -88,7 +90,8 @@ for joint in manifest["joints"]:
     root.find(f".//joint[@name='{name}']").set("range", fmt(joint["limits"]))
     root.find(f".//position[@joint='{name}']").set("ctrlrange", fmt(np.radians(joint["limits"])))
 for side, sign in [("L",1),("R",-1)]:
-    sole = np.array([.007, sign*.0305, .002]) - origins[side+"_shin"]
+    sole_y = dimensions.get("foot_center_y_mm", 30.5) * .001
+    sole = np.array([.007, sign*sole_y, .002]) - origins[side+"_shin"]
     root.find(f".//geom[@name='{side}_sole']").set("pos",fmt(sole))
     root.find(f".//site[@name='{side}_foot_touch']").set("pos",fmt(sole))
 E.indent(root)
@@ -98,18 +101,20 @@ for path in (assets / "meshes").glob("*.stl"):
     if path.name not in hashes:
         path.unlink()
 (assets / "files.json").write_text(json.dumps(files, indent=2)+"\n")
+gaits_path = assets / "gaits.json"
+gait_ids = [g["id"] for g in json.loads(gaits_path.read_text())] if gaits_path.exists() else []
 provenance = {
-    "model": "Duckbert v1.1",
-    "cad_revision": "out_none_v1.1",
-    "visual_meshes": "Unmodified neutral assembly_meshes STL exports from the v1.1 CAD folder",
+    "model": f"Duckbert {revision}",
+    "cad_revision": source.name,
+    "visual_meshes": f"Unmodified neutral assembly_meshes STL exports from the {revision} CAD folder",
     "mesh_sha256": hashes,
     "manifest_sha256": hashlib.sha256((source/"manifest.json").read_bytes()).hexdigest(),
     "model_sha256": hashlib.sha256((assets/"robot.xml").read_bytes()).hexdigest(),
     "physics": "CAD mesh mass properties, solid PLA density 1240 kg/m3, module mass estimates from the CAD manifest, plus 22 g of wiring/fasteners",
-    "contact": "54 x 41 mm flat sole boxes centred at y = +/-30.5 mm; printed-part convex hulls collide with the ground",
+    "contact": f"54 x 41 mm flat sole boxes centred at y = +/-{dimensions.get('foot_center_y_mm', 30.5)} mm; printed-part convex hulls collide with the ground",
     "colour": "Renderer offers Bordeaux or White/Orange/Cyan, with blue servos, black screen and white eyes in both palettes",
-    "controllers": ["v11_walk"],
-    "controller_source": "none_oled periodic controller, validated on the imported v1.1 model",
+    "controllers": gait_ids,
+    "controller_source": f"none_oled periodic controller, validated on the imported {revision} model",
     "steering": "Hip swing amplitude asymmetry, 10 percent maximum, with slew-limited targets"
 }
 (assets / "provenance.json").write_text(json.dumps(provenance,indent=2)+"\n")

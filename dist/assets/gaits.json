@@ -23,7 +23,7 @@
       0.0344528669442326
     ],
     "slew": 3.0,
-    "steeringSign": -1,
+    "steeringSign": 1,
     "source_controller": "none_oled"
   }
 ]
