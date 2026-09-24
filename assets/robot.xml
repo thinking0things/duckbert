@@ -1,4 +1,4 @@
-<mujoco model="Duckbert v1.1 - 6 SG90">
+<mujoco model="Duckbert v1.2 - 6 SG90">
   <compiler angle="degree" meshdir="meshes" />
   <option timestep=".002" gravity="0 0 -9.81" integrator="implicitfast" />
   <visual>
@@ -29,34 +29,35 @@
     <mesh name="R_hip_pitch_stock_horn" file="R_hip_pitch_stock_horn.stl" scale=".001 .001 .001" />
     <mesh name="R_knee" file="R_knee.stl" scale=".001 .001 .001" />
     <mesh name="R_knee_stock_horn" file="R_knee_stock_horn.stl" scale=".001 .001 .001" />
-    <mesh name="ESP32_C3_shield_envelope" file="ESP32_C3_shield_envelope.stl" scale=".001 .001 .001" />
+    <mesh name="PCA9685_driver_envelope" file="PCA9685_driver_envelope.stl" scale=".001 .001 .001" />
+    <mesh name="ESP32_C3_SuperMini_envelope" file="ESP32_C3_SuperMini_envelope.stl" scale=".001 .001 .001" />
     <mesh name="regulator_5V_envelope" file="regulator_5V_envelope.stl" scale=".001 .001 .001" />
     <mesh name="IMU_GY521_envelope" file="IMU_GY521_envelope.stl" scale=".001 .001 .001" />
-    <mesh name="battery_lipo_envelope" file="battery_lipo_envelope.stl" scale=".001 .001 .001" />
+    <mesh name="battery_lipo_65x55x10" file="battery_lipo_65x55x10.stl" scale=".001 .001 .001" />
     <mesh name="OLED_1in3_envelope" file="OLED_1in3_envelope.stl" scale=".001 .001 .001" />
     <mesh name="OLED_screen" file="OLED_screen.stl" scale=".001 .001 .001" />
-    <mesh name="OLED_eye_R" file="OLED_eye_R.stl" scale=".001 .001 .001" />
     <mesh name="OLED_eye_L" file="OLED_eye_L.stl" scale=".001 .001 .001" />
+    <mesh name="OLED_eye_R" file="OLED_eye_R.stl" scale=".001 .001 .001" />
   </asset>
   <worldbody>
     <light pos=".2 -.3 .7" dir="-.2 .3 -.7" />
     <geom name="floor" type="plane" size="2 2 .02" rgba=".85 .87 .88 1" friction=".9 .01 .001" />
     <body name="torso" pos="0 0 0.117">
       <freejoint name="root" />
-      <inertial pos="-0.0004314626174 0.0004302060244 0.01492743349" mass="0.2383218032" fullinertia="0.0001682175821 0.0002078135137 0.0001895240765 -7.516006927e-07 1.064655731e-05 -1.79959949e-06" />
+      <inertial pos="-0.001861182285 0.0003027012215 0.01618391911" mass="0.2498654959" fullinertia="0.0001806500972 0.0002231665725 0.0002115138332 1.478275664e-06 1.736350935e-05 -1.017510217e-06" />
       <camera name="follow_cam" mode="trackcom" pos=".42 -.52 .20" xyaxes=".784 .621 0 -.18 .227 .957" />
       <site name="imu" pos="-.019 .018 .010" size=".001" rgba="0 0 0 0" />
       <body name="L_hip" pos="0.0225 0.0175 -0.017">
-        <joint name="L_hip_roll" axis="1 0 0" range="-11 11" damping=".008" armature=".000004" frictionloss=".003" />
-        <inertial pos="-0.002179288495 0.009108571391 -0.002575252854" mass="0.009209176256" fullinertia="1.237042965e-06 2.188658574e-06 2.538526079e-06 6.786713e-07 1.349885751e-08 7.852725121e-09" />
+        <joint name="L_hip_roll" axis="1 0 0" range="-16 16" damping=".008" armature=".000004" frictionloss=".003" />
+        <inertial pos="-0.002179288492 0.01310857138 -0.00257525285" mass="0.009209176259" fullinertia="1.237042966e-06 2.188658574e-06 2.538526081e-06 6.786713005e-07 1.349885723e-08 7.852725237e-09" />
         <body name="L_thigh" pos="-0.0185 0.025 0">
           <joint name="L_hip_pitch" axis="0 1 0" range="-45 45" damping=".008" armature=".000004" frictionloss=".003" />
-          <inertial pos="-0.008734915208 0.006015090784 -0.01864760042" mass="0.02950583517" fullinertia="1.089180979e-05 1.278587944e-05 5.413140807e-06 2.84307728e-08 -3.771108365e-06 6.069072764e-08" />
+          <inertial pos="-0.008734915208 0.01001509078 -0.01864760042" mass="0.02950583517" fullinertia="1.089180979e-05 1.278587944e-05 5.413140807e-06 2.84307728e-08 -3.771108365e-06 6.069072764e-08" />
           <body name="L_shin" pos="-0.0178 0 -0.038">
             <joint name="L_knee" axis="0 1 0" range="-50 50" damping=".008" armature=".000004" frictionloss=".003" />
-            <inertial pos="0.01631181651 -0.01138277845 -0.04282374339" mass="0.02123821224" fullinertia="1.186867235e-05 1.44899549e-05 5.512844169e-06 1.593585924e-07 3.342925562e-06 -4.490071125e-07" />
-            <geom name="L_sole" type="box" size=".027 .0205 .002" pos="0.0208 -0.012 -0.06" rgba="1 .46 .13 0" friction=".9 .01 .001" mass="0" contype="2" conaffinity="1" />
-            <site name="L_foot_touch" type="box" size=".027 .0205 .0021" pos="0.0208 -0.012 -0.06" rgba="0 0 0 0" />
+            <inertial pos="0.01637228733 -0.008447178244 -0.04296047535" mass="0.02152337266" fullinertia="1.195977839e-05 1.454662314e-05 5.595276217e-06 2.609057167e-07 3.356029033e-06 -8.266220443e-07" />
+            <geom name="L_sole" type="box" size=".027 .0205 .002" pos="0.0208 -0.01 -0.06" rgba="1 .46 .13 0" friction=".9 .01 .001" mass="0" contype="2" conaffinity="1" />
+            <site name="L_foot_touch" type="box" size=".027 .0205 .0021" pos="0.0208 -0.01 -0.06" rgba="0 0 0 0" />
             <geom type="mesh" mesh="06_shin_L" pos="0.0138 -0.0425 -0.062" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
             <geom name="06_shin_L_collision" type="mesh" mesh="06_shin_L" pos="0.0138 -0.0425 -0.062" contype="2" conaffinity="1" group="3" rgba="0 0 0 0" friction=".9 .01 .001" mass="0" />
             <geom type="mesh" mesh="07_foot_L" pos="0.0138 -0.0425 -0.062" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
@@ -73,16 +74,16 @@
         <geom type="mesh" mesh="L_hip_pitch_stock_horn" pos="-0.0225 -0.0175 -0.1" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
       </body>
       <body name="R_hip" pos="0.0225 -0.0175 -0.017">
-        <joint name="R_hip_roll" axis="1 0 0" range="-11 11" damping=".008" armature=".000004" frictionloss=".003" />
-        <inertial pos="-0.002179014055 -0.009108393692 -0.002575256713" mass="0.009209182033" fullinertia="1.237106544e-06 2.188665925e-06 2.538561507e-06 -6.786767551e-07 1.349238269e-08 -7.847892077e-09" />
+        <joint name="R_hip_roll" axis="1 0 0" range="-16 16" damping=".008" armature=".000004" frictionloss=".003" />
+        <inertial pos="-0.002179014054 -0.01310839369 -0.002575256716" mass="0.009209182036" fullinertia="1.237106545e-06 2.188665926e-06 2.538561508e-06 -6.786767556e-07 1.349238316e-08 -7.847891018e-09" />
         <body name="R_thigh" pos="-0.0185 -0.025 0">
           <joint name="R_hip_pitch" axis="0 1 0" range="-45 45" damping=".008" armature=".000004" frictionloss=".003" />
-          <inertial pos="-0.008734261075 -0.006014408294 -0.01864571064" mass="0.0295087823" fullinertia="1.089450855e-05 1.278922655e-05 5.414110541e-06 -2.857683772e-08 -3.771992951e-06 -6.111645179e-08" />
+          <inertial pos="-0.008734261075 -0.01001440829 -0.01864571064" mass="0.0295087823" fullinertia="1.089450855e-05 1.278922655e-05 5.414110541e-06 -2.857683772e-08 -3.771992951e-06 -6.111645179e-08" />
           <body name="R_shin" pos="-0.0178 0 -0.038">
             <joint name="R_knee" axis="0 1 0" range="-50 50" damping=".008" armature=".000004" frictionloss=".003" />
-            <inertial pos="0.01631167998 0.01138275183 -0.04282327585" mass="0.02123994214" fullinertia="1.187030421e-05 1.4492085e-05 5.513735214e-06 -1.593640959e-07 3.34344684e-06 4.490426064e-07" />
-            <geom name="R_sole" type="box" size=".027 .0205 .002" pos="0.0208 0.012 -0.06" rgba="1 .46 .13 0" friction=".9 .01 .001" mass="0" contype="2" conaffinity="1" />
-            <site name="R_foot_touch" type="box" size=".027 .0205 .0021" pos="0.0208 0.012 -0.06" rgba="0 0 0 0" />
+            <inertial pos="0.01637214774 0.008447127405 -0.04296000301" mass="0.02152510255" fullinertia="1.196141762e-05 1.454875634e-05 5.596172231e-06 -2.609202588e-07 3.35655132e-06 8.266908008e-07" />
+            <geom name="R_sole" type="box" size=".027 .0205 .002" pos="0.0208 0.01 -0.06" rgba="1 .46 .13 0" friction=".9 .01 .001" mass="0" contype="2" conaffinity="1" />
+            <site name="R_foot_touch" type="box" size=".027 .0205 .0021" pos="0.0208 0.01 -0.06" rgba="0 0 0 0" />
             <geom type="mesh" mesh="06_shin_R" pos="0.0138 0.0425 -0.062" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
             <geom name="06_shin_R_collision" type="mesh" mesh="06_shin_R" pos="0.0138 0.0425 -0.062" contype="2" conaffinity="1" group="3" rgba="0 0 0 0" friction=".9 .01 .001" mass="0" />
             <geom type="mesh" mesh="07_foot_R" pos="0.0138 0.0425 -0.062" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
@@ -108,21 +109,22 @@
       <geom name="15_lipo_cassette_collision" type="mesh" mesh="15_lipo_cassette" pos="-0 -0 -0.117" contype="2" conaffinity="1" group="3" rgba="0 0 0 0" friction=".9 .01 .001" mass="0" />
       <geom type="mesh" mesh="L_hip_roll" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
       <geom type="mesh" mesh="R_hip_roll" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
-      <geom type="mesh" mesh="ESP32_C3_shield_envelope" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
+      <geom type="mesh" mesh="PCA9685_driver_envelope" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
+      <geom type="mesh" mesh="ESP32_C3_SuperMini_envelope" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
       <geom type="mesh" mesh="regulator_5V_envelope" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
       <geom type="mesh" mesh="IMU_GY521_envelope" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
-      <geom type="mesh" mesh="battery_lipo_envelope" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
+      <geom type="mesh" mesh="battery_lipo_65x55x10" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
       <geom type="mesh" mesh="OLED_1in3_envelope" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
       <geom type="mesh" mesh="OLED_screen" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
-      <geom type="mesh" mesh="OLED_eye_R" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
       <geom type="mesh" mesh="OLED_eye_L" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
+      <geom type="mesh" mesh="OLED_eye_R" pos="-0 -0 -0.117" rgba="0.2158605001 0 0.0144438436 1" contype="0" conaffinity="0" group="1" mass="0" />
     </body>
   </worldbody>
   <actuator>
-    <position name="L_hip_roll_servo" joint="L_hip_roll" kp="1.2" kv=".025" ctrlrange="-0.1919862177 0.1919862177" forcerange="-.177 .177" />
+    <position name="L_hip_roll_servo" joint="L_hip_roll" kp="1.2" kv=".025" ctrlrange="-0.2792526803 0.2792526803" forcerange="-.177 .177" />
     <position name="L_hip_pitch_servo" joint="L_hip_pitch" kp="1.2" kv=".025" ctrlrange="-0.7853981634 0.7853981634" forcerange="-.177 .177" />
     <position name="L_knee_servo" joint="L_knee" kp="1.2" kv=".025" ctrlrange="-0.872664626 0.872664626" forcerange="-.177 .177" />
-    <position name="R_hip_roll_servo" joint="R_hip_roll" kp="1.2" kv=".025" ctrlrange="-0.1919862177 0.1919862177" forcerange="-.177 .177" />
+    <position name="R_hip_roll_servo" joint="R_hip_roll" kp="1.2" kv=".025" ctrlrange="-0.2792526803 0.2792526803" forcerange="-.177 .177" />
     <position name="R_hip_pitch_servo" joint="R_hip_pitch" kp="1.2" kv=".025" ctrlrange="-0.7853981634 0.7853981634" forcerange="-.177 .177" />
     <position name="R_knee_servo" joint="R_knee" kp="1.2" kv=".025" ctrlrange="-0.872664626 0.872664626" forcerange="-.177 .177" />
   </actuator>
