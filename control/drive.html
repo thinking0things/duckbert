@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Duckbert · drive</title>
+<style>
+  /* Hold an arrow and he walks, let go and he stops. Calibrate first, on /calibrate. */
+  :root { --bg: #f3f1ec; --panel: #fff; --fg: #1d1f22; --dim: #6b6f76; --line: #dcd8cf;
+          --go: #2f7d4f; --stop: #b23a2e; --acc: #2c5aa0; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #15171a; --panel: #1d2024; --fg: #e9e7e2; --dim: #9aa0a8;
+          --line: #30343a; --go: #5dbb82; --stop: #e0705f; --acc: #7aa7e6; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, -apple-system, sans-serif; padding: 16px;
+         -webkit-user-select: none; user-select: none; }
+  main { max-width: 520px; margin: 0 auto; display: grid; gap: 14px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  h1 { font-size: 20px; margin: 0; flex: 1; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 10px;
+           padding: 10px 14px; cursor: pointer; touch-action: none; }
+  button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  button.stop { background: var(--stop); border-color: var(--stop); color: #fff; }
+  .pad { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto; gap: 10px; }
+  .pad button { font-size: 34px; padding: 26px 0; border-radius: 16px; }
+  .pad #up { grid-column: 2; grid-row: 1; }
+  .pad #left { grid-column: 1; grid-row: 2; }
+  .pad #right { grid-column: 3; grid-row: 2; }
+  .pad button.held { background: var(--go); border-color: var(--go); color: #fff; }
+  .pad button:disabled { opacity: .45; }
+  .state { font-size: 22px; font-weight: 600; text-align: center; padding: 10px; border-radius: 10px; background: var(--panel);
+           border: 1px solid var(--line); }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 13px; border: 1px solid var(--line); }
+  .pill.ok { color: var(--go); border-color: var(--go); } .pill.bad { color: var(--stop); border-color: var(--stop); }
+  .hint { font-size: 12.5px; color: var(--dim); margin: 0; }
+  #log { font: 12px ui-monospace, Menlo, monospace; color: var(--dim); max-height: 110px; overflow: auto; white-space: pre-wrap; margin: 0; }
+  a { color: var(--acc); }
+</style>
+</head>
+<body>
+<main>
+  <div class="row">
+    <h1>Duckbert</h1>
+    <span id="link" class="pill">…</span>
+    <a href="/calibrate">calibrate</a>
+  </div>
+
+  <div class="row">
+    <button onclick="wake()">Wake up</button>
+    <button onclick="park()">Park</button>
+    <button id="rec" onclick="toggleRec()">● record</button>
+  </div>
+
+  <div id="state" class="state">–</div>
+
+  <div class="pad">
+    <button id="up" aria-label="forward">▲</button>
+    <button id="left" aria-label="left">⟲</button>
+    <button id="right" aria-label="right">⟳</button>
+  </div>
+  <p class="hint">Hold: ▲ walks forward, ⟲ ⟳ turn. Let go: the rocking stops and he stands still. Press again: he starts
+    rocking and after 1–2 s he walks. The first press after Wake up takes him into position (3–4 s).
+    Keyboard: ↑ ← →. Recordings are saved as CSV in <code>control/logs/</code>.</p>
+  <pre id="log"></pre>
+</main>
+
+<script>
+// The walking settings: rock size, step threshold and look-ahead, legs splay, pitch damping, trunk lean, crouch.
+const DEF = {len: 0.10, amp: 33, thr: 4, lead: 0.24, splay: 4, pp: -0.50, pd: 0, lean: -26, crouch: 20, pref: 0};
+function settings() { return Object.assign({}, DEF); }
+function startCommands() {
+  const v = settings();
+  const o = 'o 0.209 -0.035 0.048 0.625 0.110 0.250 0.692 0.300 0.626 1.449 -0.681 0.031'.split(' ');
+  o[3] = (+v.len).toFixed(2);                              // stride length
+  o[11] = (+v.pp).toFixed(3);
+  return ['B 0', 'K 0', 'Q 0', 'H 0', 'W 0', 'Z 100', o.join(' '),
+          `v ${(+v.thr).toFixed(1)} ${(+v.amp).toFixed(1)} 1 ${(+v.lead).toFixed(2)} ${(+v.pd).toFixed(3)} ${(+v.splay).toFixed(1)} ${(+v.crouch).toFixed(0)} 1 ${(+v.pref).toFixed(1)} 2 0`,
+          `L ${(+v.lean).toFixed(1)}`, 'f 0'];
+}
+
+function log(t) { const e = document.getElementById('log'); e.textContent = (new Date().toLocaleTimeString() + '  ' + t + '\n' + e.textContent).slice(0, 3000); }
+async function send(c) {
+  try { const r = await fetch('/api/cmd', {method: 'POST', body: c}); if (!r.ok) log('rejected: ' + c); } catch (e) { log('bridge not running'); }
+}
+
+let state = null, seen = 0;
+function mode() { return state && state.kv ? state.kv.mode : null; }
+
+// ---- what is held, and what the robot is told
+// 'up' | 'left' | 'right' | null; the last one pressed wins, letting go of it falls back to one still held.
+const held = new Set(); let order = [];
+let ready = false, starting = false, sent = 'none';
+function want() { for (let i = order.length - 1; i >= 0; --i) if (held.has(order[i])) return order[i]; return null; }
+// Transitions: the firmware ramps the stride (f, ~1.2 s) and the steering lean (~0.5 s); the page only sends what
+// changed, one state at a time, never a burst. No heading hold (13 Oct: it leaned it too much going straight).
+let busy = false;
+async function apply() {
+  if (busy) return; busy = true;
+  try {
+    for (;;) {
+      const w = ready ? (want() || 'none') : 'none';
+      if (w === sent) break;
+      if (w === 'none')       { await send('W 0'); await send('H 0'); await send('f 0'); }
+      else if (w === 'up')    { await send('W 0'); await send('H 0'); await send('f 100'); }
+      else if (w === 'left')  { await send('H 0'); await send('W -100'); await send('f 100'); }
+      else if (w === 'right') { await send('H 0'); await send('W 100'); await send('f 100'); }
+      sent = w;
+      log({none: 'stop', up: 'forward', left: 'turning left', right: 'turning right'}[w]);
+    }
+  } finally { busy = false; show(); }
+}
+
+async function start() {
+  const m = mode();
+  if (m === 'LIMP' || m === 'WAKE' || !m) { log('press Wake up first'); return; }
+  if (m === 'STEP') { ready = true; return; }
+  if (starting) return;
+  starting = true; ready = false; sent = 'none'; show();
+  for (const c of startCommands()) await send(c);
+  await send('m');
+  log('rocking, getting ready…');
+  setTimeout(() => { starting = false; ready = mode() === 'STEP'; if (ready) log('ready'); show(); apply(); }, 3500);
+}
+
+function press(k) {
+  if (held.has(k)) return;
+  held.add(k); order = order.filter(x => x !== k).concat([k]);
+  if (!ready) start();
+  apply(); show();
+}
+function release(k) {
+  if (!held.delete(k)) return;
+  apply(); show();
+}
+function releaseAll() { held.clear(); apply(); show(); }
+
+for (const [id, k] of [['up', 'up'], ['left', 'left'], ['right', 'right']]) {
+  const b = document.getElementById(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); press(k); });
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => release(k));
+  b.addEventListener('contextmenu', e => e.preventDefault());
+}
+const KEYS = {ArrowUp: 'up', ArrowLeft: 'left', ArrowRight: 'right'};
+document.addEventListener('keydown', e => { const k = KEYS[e.key]; if (k) { e.preventDefault(); if (!e.repeat) press(k); } });
+document.addEventListener('keyup', e => { const k = KEYS[e.key]; if (k) { e.preventDefault(); release(k); } });
+// a finger off the screen or the tab in the background must never leave him walking
+window.addEventListener('blur', releaseAll);
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
+
+async function wake() { ready = false; sent = 'none'; await send('e'); log('waking up'); }
+async function park() { held.clear(); ready = false; sent = 'none'; await send('W 0'); await send('H 0'); await send('y'); log('parked'); show(); }
+async function toggleRec() {
+  const on = state && state.kv && state.kv.rec === '1';
+  if (on) { await send('R 0'); log('recording saved'); return; }
+  try { await fetch('/api/reclabel', {method: 'POST', body: 'drive'}); } catch (e) {}
+  await send('R 1'); log('recording');
+}
+
+function show() {
+  const m = mode();
+  const w = ready ? (want() || 'none') : 'none';
+  for (const id of ['up', 'left', 'right']) {
+    const b = document.getElementById(id);
+    b.classList.toggle('held', held.has(id));
+    b.disabled = !(m === 'HOLD' || m === 'STEP');
+  }
+  const st = document.getElementById('state');
+  if (!m) st.textContent = '–';
+  else if (m === 'LIMP') st.textContent = 'off – press Wake up';
+  else if (m === 'WAKE') st.textContent = 'waking up…';
+  else if (starting) st.textContent = 'getting ready…';
+  else if (m === 'HOLD') st.textContent = 'awake – hold an arrow';
+  else if (m === 'STEP') st.textContent = {none: 'standing', up: 'forward', left: 'turning left', right: 'turning right'}[w];
+  else st.textContent = m;
+}
+
+// The page reloads itself when the bridge serves a newer copy, but only with the robot off or standing still.
+let pageSig = null, sigAt = 0;
+async function checkPage(m) {
+  if (Date.now() - sigAt < 10000) return; sigAt = Date.now();
+  try {
+    const t = await (await fetch(location.pathname, {cache: 'no-store'})).text();
+    let h = 0; for (let i = 0; i < t.length; ++i) h = (h * 31 + t.charCodeAt(i)) | 0;
+    const s = t.length + ':' + h;
+    if (pageSig === null) pageSig = s; else if (s !== pageSig && (m === 'LIMP' || m === 'HOLD') && held.size === 0) location.reload();
+  } catch (e) {}
+}
+
+async function poll() {
+  try {
+    const s = await (await fetch('/api/state?since=' + seen)).json();
+    seen = s.seen; state = s;
+    s.log.forEach(l => { if (!l.startsWith('> ') && (l.includes('fell') || l.includes('IMU'))) log(l); });
+  } catch (e) { state = null; }
+  const link = document.getElementById('link');
+  if (!state) { link.textContent = 'bridge not running'; link.className = 'pill bad'; }
+  else if (!state.connected) { link.textContent = 'robot not connected'; link.className = 'pill bad'; }
+  else { link.textContent = 'connected'; link.className = 'pill ok'; }
+  const m = mode();
+  if (m !== 'STEP' && ready) { ready = false; sent = 'none'; held.clear(); }   // fell, parked or stopped elsewhere
+  const b = document.getElementById('rec'), on = state && state.kv && state.kv.rec === '1';
+  b.textContent = on ? '■ stop recording' : '● record'; b.className = on ? 'stop' : '';
+  checkPage(m);
+  show();
+}
+setInterval(poll, 400); poll();
+</script>
+</body>
+</html>

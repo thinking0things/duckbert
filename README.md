@@ -1,14 +1,97 @@
 # Duckbert
 
+**A tiny open-source biped robot that walks on six of the cheapest servos you can buy.**
+No ankles, no servo driver: an ESP32-C3, a gyroscope and six SG90s. He walks by rocking from
+foot to foot, and stepping with whichever foot is free.
+
+![Duckbert](docs/duckbert.jpg)
+
+Everything to build him is here: the parts to print, the wiring, the firmware, and the page you
+calibrate and drive him from. There's also a [simulation you can drive in your browser](https://thinking0things.github.io/duckbert/).
+
+| Folder | What's inside |
+| ------ | ------------- |
+| [`print/`](print) | Every part to print, in print orientation, with quantities and settings |
+| [`docs/wiring.png`](docs/wiring.png) | The wiring diagram |
+| [`firmware/`](firmware) | The ESP32-C3 sketch, and how to flash it |
+| [`control/`](control) | Calibrate and drive him from your browser (Python, runs on your computer) |
+| [`docs/calibration.md`](docs/calibration.md) | Calibration, step by step |
+| [`cad/v1.3/`](cad/v1.3) | STEP files and the FreeCAD assembly, to edit the design |
+| `dist/`, `mujoco/` | The browser simulation and a native MuJoCo viewer |
+
+## Build your own
+
+### 1 · Parts
+
+| Part | Qty |
+| ---- | --- |
+| SG90 9 g servo | 6 |
+| ESP32-C3 SuperMini, with a shield/expansion board that has servo headers | 1 |
+| GY-521 gyroscope (MPU-6050) | 1 |
+| 1.3" I2C OLED (SH1106) | 1 |
+| 5 V buck converter | 1 |
+| Flat LiPo battery, to fit the cassette under the body (about 65 × 55 × 10 mm) | 1 |
+| M2 screws, wires | — |
+| PLA | about 200 g |
+
+### 2 · Print
+
+Everything is in [`print/`](print), with what to print first and the settings.
+
+![All the printed parts](docs/print_parts.jpg)
+
+### 3 · Wire
+
+![Wiring diagram](docs/wiring.png)
+
+| Joint / module | GPIO |
+| -------------- | ---- |
+| Left hip roll, hip pitch, knee | 3, 4, 6 |
+| Right hip roll, hip pitch, knee | 0, 1, 2 |
+| Gyroscope SDA / SCL | 8 / 9 |
+| OLED SDA / SCL | 10 / 7 |
+
+All grounds are common. The servos take 5 V from the regulator, never from the board's 3.3 V pin.
+
+### 4 · Flash the firmware
+
+See [`firmware/`](firmware): one library install, then compile and upload.
+
+### 5 · Calibrate
+
+The step nobody talks about. Every servo horn sits up to half a tooth off, and that is enough to stop
+him from walking. A guided page fixes it in five minutes: [`docs/calibration.md`](docs/calibration.md).
+
+### 6 · Walk
+
+```sh
+pip install pyserial
+python3 control/duckbert_web.py
+```
+
+Press **Wake up**, then hold ▲. More in [`control/`](control).
+
+## How he walks
+
+He can't stand on one foot: without ankles, tilting the hips moves his weight less than 3 mm over the
+foot. So he doesn't try. The gyroscope feels him rocking side to side, and the hips push the rock
+along like a swing. The rule is in `step_control()` in the firmware: when he's leaning onto his front
+foot, and still moving that way, the back foot is free, so it steps. Then the other foot is in front,
+and the same rule fires on the other side.
+
+The curved shoes help: he rolls onto a foot instead of tipping over its edge.
+
+## The simulation
+
 **[Open the simulation](https://thinking0things.github.io/duckbert/)**
 
 ![Duckbert v1.2 preview](docs/duckbert-preview.svg)
 
-A headless SG90 robot with one walking gait and directional controls in the browser.
-MuJoCo simulates gravity, contacts and six servomotors; Three.js renders the CAD meshes.
-This is a standalone simulation with no connection to the physical robot.
+A standalone simulation of an earlier version (v1.2, flat feet), with its own walking gait and
+directional controls in the browser. MuJoCo simulates gravity, contacts and the six servomotors;
+Three.js renders the CAD meshes. It has no connection to the physical robot.
 
-## Controls
+### Controls
 
 - **W / ↑**: walk forward.
 - **S / ↓**: walk backward by reversing the phase of the same gait.
@@ -22,7 +105,7 @@ Directions are relative to the robot. Left and right rotate in place; combine th
 for a walking turn. Pausing freezes simulation time; it is not a physical stopping controller.
 The simulation also pauses when the page loses focus.
 
-## Model and controller
+### Model and controller
 
 The simulator imports the neutral assembly meshes from `cad/out_none_v1.2`,
 including the shorter body, LiPo cassette, compact hip block, ESP32-C3 shield and inward-offset
@@ -54,7 +137,7 @@ This flat-sole, no-ankle geometry is also the wall the walk runs into: see
 [`docs/walking-limits.md`](docs/walking-limits.md) for what that costs it, in millimetres, and
 the two unbuilt changes with the most headroom.
 
-## Local development
+### Local development
 
 Requires Node.js 22+ and Python 3 for the static server.
 
@@ -68,13 +151,13 @@ npm run serve
 Open `http://127.0.0.1:8768`. The `dist/` folder includes all runtime dependencies and can also
 be served by any static HTTP server. No API keys or backend are required.
 
-## Run locally in MuJoCo
+### Run locally in MuJoCo
 
 The repository also includes a native MuJoCo runner and English setup instructions in
 [`mujoco/README.md`](mujoco/README.md). Install the Python dependency, then run
 `python mujoco/run_viewer.py` to open the v1.2 model in MuJoCo's interactive viewer.
 
-## GitHub Pages
+### GitHub Pages
 
 The `main` branch contains source code, tests, data and pinned dependencies. The `gh-pages`
 branch contains only the contents of `dist/`, served at the project site's root.
@@ -98,7 +181,7 @@ Startup checks isolation before importing the engine and reports setup or loadin
 instead of leaving the loading screen indefinitely. Use HTTPS or localhost and a browser
 that supports service workers and shared WebAssembly memory.
 
-## Provenance and third-party licences
+### Provenance and third-party licences
 
 - Physics: [Google DeepMind MuJoCo](https://github.com/google-deepmind/mujoco), official
   `@mujoco/mujoco` package **3.6.0**, Apache-2.0; licence in `dist/vendor/mujoco/LICENSE`.
@@ -110,7 +193,7 @@ that supports service workers and shared WebAssembly memory.
 
 Model provenance is recorded in `dist/assets/provenance.json`.
 
-## Reimporting CAD
+### Reimporting CAD
 
 With Python, NumPy and trimesh installed, run
 `python scripts/import-cad.py /path/to/out_none_v1.2` and then `npm test`.
