@@ -6,13 +6,12 @@ foot to foot, and stepping with whichever foot is free.
 
 ![Duckbert](docs/duckbert.jpg)
 
-Everything to build him is here: the parts to print, the wiring, the firmware, and the page you
+Everything to build him is here: the parts to print, the pin list, the firmware, and the page you
 calibrate and drive him from. There's also a [simulation you can drive in your browser](https://thinking0things.github.io/duckbert/).
 
 | Folder | What's inside |
 | ------ | ------------- |
 | [`print/`](print) | Every part to print, in print orientation, with quantities and settings |
-| [`docs/wiring.png`](docs/wiring.png) | The wiring diagram |
 | [`firmware/`](firmware) | The ESP32-C3 sketch, and how to flash it |
 | [`control/`](control) | Calibrate and drive him from your browser (Python, runs on your computer) |
 | [`docs/calibration.md`](docs/calibration.md) | Calibration, step by step |
@@ -42,8 +41,6 @@ Everything is in [`print/`](print), with what to print first and the settings.
 
 ### 3 · Wire
 
-![Wiring diagram](docs/wiring.png)
-
 | Joint / module | GPIO |
 | -------------- | ---- |
 | Left hip roll, hip pitch, knee | 3, 4, 6 |
@@ -59,8 +56,7 @@ See [`firmware/`](firmware): one library install, then compile and upload.
 
 ### 5 · Calibrate
 
-The step nobody talks about. Every servo horn sits up to half a tooth off, and that is enough to stop
-him from walking. A guided page fixes it in five minutes: [`docs/calibration.md`](docs/calibration.md).
+Every servo horn sits up to half a tooth off, and that is enough to stop him from walking. A guided page fixes it in five minutes: [`docs/calibration.md`](docs/calibration.md).
 
 ### 6 · Walk
 
@@ -69,7 +65,8 @@ pip install pyserial
 python3 control/duckbert_web.py
 ```
 
-Press **Wake up**, then hold ▲. More in [`control/`](control).
+Press **Wake up**, then hold ▲. He also does push-ups, a little dance, leans and bows, from the same page.
+More in [`control/`](control).
 
 ## How he walks
 

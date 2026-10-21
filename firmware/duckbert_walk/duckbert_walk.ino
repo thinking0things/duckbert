@@ -249,6 +249,17 @@ float step_shuffle_lift[2] = {0.0f, 0.0f};
 // ~1.2 s), so a press or a release never jumps the feet. 100 = as before (the the step settings page never sends it).
 float step_go = 1.0f, step_go_now = 1.0f;
 float step_lean_now = 0.0f;    // the steering lean actually applied, deg (rate-limited, see step_control)
+// 19 Oct, the lift recipe found in simulation (slide_sim.py, results_walk_combo.json: foot ~7 mm instead of ~0,
+// walks forward, no falls). 'b <lead ms> <toe deg> <push deg> <pump cap deg>', all off by default (0 0 0 12):
+//  lead: the free foot's lift follows the lean predicted that far ahead (roll + lead*rate), unfiltered - the old
+//        lift came after the foot was already back down;
+//  toe:  extra knee bend on the lifted leg (q2 / q5 more negative), in proportion to its lift;
+//  push: lengthen the loaded leg (hip -, knee +) in time with the roll rate, never the lifted one, never shorten;
+//  cap:  the hip-roll pump's upper limit (12 until now).
+float lift_lead_s = 0.0f, toe_up_deg = 0.0f, leg_push_deg = 0.0f, pump_cap_deg = 12.0f;
+float lift_tau_s = 0.03f;   // the lead lift's filter (b, 5th number, ms)
+bool leg_trim_on = false; float leg_trim_deg = 0.0f;   // b, 6th number: legs level the rock's centre
+extern int show_id; extern volatile int show_face;   // the video moves ('*'), defined with the face
 int step_lifting = 0;          // in place: the leg in the air (0 left, 1 right)
 int step_last_lift = -1;
 bool step_skip_shift = false;  // a step fired by the rock: shift and sink ease in during the swing (no jump)
@@ -838,9 +849,9 @@ void fb_tick(float dt) {
   const bool tipped = (fabsf(att_roll) > FALL_RAD && fabsf(acc_roll) > FALL_RAD) ||
                       (att_pitch > FALL_FWD_RAD && acc_pitch > FALL_FWD_RAD) ||
                       (att_pitch < -FALL_BACK_RAD && acc_pitch < -FALL_BACK_RAD);
-  if ((mode == WALK || mode == ROCK || mode == STEP || (mode == HOLD && push_on)) && att_valid && tipped) {
+  if ((mode == WALK || mode == ROCK || mode == STEP || (mode == HOLD && (push_on || show_id >= 0))) && att_valid && tipped) {
     if (++fall_ticks >= 10) {
-      mode = LIMP; fall_ticks = 0; corr_roll = corr_pitch = corr_diff = 0; rock_deg = 0;
+      mode = LIMP; fall_ticks = 0; corr_roll = corr_pitch = corr_diff = 0; rock_deg = 0; show_id = -1; show_face = -1;
       for (int j = 0; j < 6; ++j) ledcWrite(cal[j].pin, 0);
       out.println(F("fell over - servos limp; 'e' to wake"));
     }
@@ -1043,6 +1054,13 @@ RoboEyes<OledSW> eyes(oled);
 
 enum Face { FACE_DEFAULT, FACE_ASLEEP, FACE_SLEEPY, FACE_CURIOUS_L, FACE_CURIOUS_R, FACE_WORRIED, FACE_HAPPY };
 static const char *FACE_NAME[] = {"default", "asleep", "sleepy", "curious-left", "curious-right", "worried", "happy"};
+// 19 Oct: the video moves (squats, dance, lean, bow) on the page. '* n' plays one, '* 0' stops.
+// Keyframes from the simulation (movies/showcase/moves.json, export_show.py), open loop like there: smoothstep
+// between keyframes, at most 3 rad/s, the face each keyframe names.
+#include "show_moves.h"
+int show_id = -1;            // the move playing, -1 none
+float show_t = 0.0f;
+volatile int show_face = -1;
 volatile int face_want = FACE_ASLEEP;
 uint32_t worried_until = 0;
 
@@ -1053,6 +1071,7 @@ void face_tick() {
     worried_until = millis() + 1500;
   int f;
   if (mode == LIMP) f = FACE_ASLEEP;
+  else if (show_id >= 0 && show_face >= 0) f = show_face;
   else if (mode == WALK) f = FACE_HAPPY;
   else if (mode == WAKE || mode == STAND) f = FACE_DEFAULT;
   else if (millis() < worried_until) f = FACE_WORRIED;
@@ -1225,7 +1244,7 @@ void print_machine() {
   bool all_ok = true;
   for (int j = 0; j < 6; ++j) all_ok &= pwm_ok[j];
   out.printf("STATE mode=%s speed=%.2f sel=%d pwm=%d gait=%d stand=%d amp=%.2f sway=%.2f imu=%d "
-                "txp=%.1f lean=%.1f turn=%.0f knee=%.0f gimu=%d gfs=%.0f sc=%.1f sr=%.1f ss=%.2f sa=%.1f side=%.1f rock=%.1f rockt=%.2f rockd=%.2f yaw=%.1f hold=%d ytgt=%.1f tc=%.0f rec=%d oled=%d oledf=%lu oledn=%lu face=%s imumap=%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f wifi=%d ip=%s rst=%s push=%d pkr=%.3f pkd=%.3f ppp=%.3f ppd=%.3f cd=%.1f att=%d roll=%.1f pitch=%.1f aroll=%.1f apitch=%.1f fb=%d kpr=%.3f kdr=%.3f kpp=%.3f kdp=%.3f fbt=%.2f cr=%.1f cp=%.1f jp=%d jkp=%.3f jkd=%.3f fwd=%.0f rkm=%d rkt=%.1f rka=%.1f rkl=%.2f rkp=%.1f rkg=%.2f rku=%.3f rkd=%.3f rkc=%.1f pkt=%.1f rks=%d rkh=%.1f stt=%.3f yerr=%.1f arm=%d stc=%d\n",
+                "txp=%.1f lean=%.1f turn=%.0f knee=%.0f gimu=%d gfs=%.0f sc=%.1f sr=%.1f ss=%.2f sa=%.1f side=%.1f rock=%.1f rockt=%.2f rockd=%.2f yaw=%.1f hold=%d ytgt=%.1f tc=%.0f rec=%d oled=%d oledf=%lu oledn=%lu face=%s imumap=%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f wifi=%d ip=%s rst=%s push=%d pkr=%.3f pkd=%.3f ppp=%.3f ppd=%.3f cd=%.1f att=%d roll=%.1f pitch=%.1f aroll=%.1f apitch=%.1f fb=%d kpr=%.3f kdr=%.3f kpp=%.3f kdp=%.3f fbt=%.2f cr=%.1f cp=%.1f jp=%d jkp=%.3f jkd=%.3f fwd=%.0f rkm=%d rkt=%.1f rka=%.1f rkl=%.2f rkp=%.1f rkg=%.2f rku=%.3f rkd=%.3f rkc=%.1f pkt=%.1f rks=%d rkh=%.1f stt=%.3f yerr=%.1f arm=%d stc=%d show=%d\n",
                 mode_name(), speed, selected, all_ok, gait, (int)STANDUP_AVAILABLE, amp, sway, (int)imu_ok,
                 wifi_txp, walk_lean, walk_turn * 100.0f, knee_scale * 100.0f, gait_imu, gait_fb_scale * 100.0f,
                 sh_crouch, sh_rock, sh_sharp, sh_abd, walk_side, rock_deg, rock_period, rock_diff, yaw_rad * 180.0f / PI,
@@ -1236,7 +1255,7 @@ void print_machine() {
                 acc_roll * 180.0f / PI, acc_pitch * 180.0f / PI, fb_mode,
                 fb_kpr, fb_kdr, fb_kpp, fb_kdp, fb_tau, corr_roll * 180.0f / PI, corr_pitch * 180.0f / PI,
                 (int)pitch_own, pitch_kp, pitch_kd, walk_fwd * 100.0f,
-                rock_mode, rock_thr_deg, rock_amp_deg, rock_lead_s, rock_peak, rock_gain, rock_pump, rock_pdamp, rock_trim_deg, pitch_trim_deg, rock_style, rock_hip_amp, step_turn, (yaw_target - yaw_f) * 180.0f / PI, (int)step_armed, step_count);
+                rock_mode, rock_thr_deg, rock_amp_deg, rock_lead_s, rock_peak, rock_gain, rock_pump, rock_pdamp, rock_trim_deg, pitch_trim_deg, rock_style, rock_hip_amp, step_turn, (yaw_target - yaw_f) * 180.0f / PI, (int)step_armed, step_count, show_id + 1);
   for (int j = 0; j < 6; ++j)
     out.printf("J %d %s pin=%d sign=%d trim=%.2f now=%.2f min=%.1f max=%.1f\n",
                   j, JOINT_NAME[j], cal[j].pin, cal[j].sign,
@@ -1430,7 +1449,7 @@ void exec_line(char *s) {
         rock_hip_amp = 4.0f;
         step_turn = 0.0f; yaw_target = yaw_rad; yaw_f = yaw_rad;   // straight on: where it points now
         pitch_trim_deg = 0.0f;
-        step_pitch_center = step_rock_center = step_last_hi = step_last_lo = 0.0f; step_lean_now = 0.0f;
+        step_pitch_center = step_rock_center = step_last_hi = step_last_lo = 0.0f; step_lean_now = 0.0f; leg_trim_deg = 0.0f;
         step_pose(false, 0.0f, step_front, q);
         for (int j = 0; j < 6; ++j) q[j] = constrain(q[j], JOINT_MIN_RAD[j], JOINT_MAX_RAD[j]);
         mode = HOLD;
@@ -1438,6 +1457,13 @@ void exec_line(char *s) {
         last_control = micros();
         g_ref_roll = att_roll;
         g_ref_pitch = att_pitch;     // a fixed reference is reached gradually in step_control()
+        // 19 Oct (walk_20261019_092647_guida_alzata): it pitched to 80 deg during the 0.9 s move into the pose and the
+        // reference started there - then held the trunk 30-45 deg forward for 9 s until it fell. With a fixed
+        // reference the start is kept within 10 deg of it.
+        if (fabsf(step_pitch_ref_deg) < 60.0f) {
+          const float fr = step_pitch_ref_deg * PI / 180.0f, w = 10.0f * PI / 180.0f;
+          g_ref_pitch = constrain(g_ref_pitch, fr - w, fr + w);
+        }
         mode = STEP;
         out.println(F("step mode: left foot in front - 'm' takes one step, 's' leaves"));
       } else if (!step_moving && rock_mode > 0) {
@@ -1751,6 +1777,18 @@ void exec_line(char *s) {
         out.printf("wifi transmit power %.1f dBm (stored)\n", wifi_txp);
         break;
       }
+      if (arg[0] == 's' && (arg[1] == 0 || arg[1] == ' ')) {
+        // 20 Oct: a phone hotspot (2.4 GHz ch 1, WPA2) stayed at "joining" - does the board see it at all?
+        if (!wifi_configured) WiFi.mode(WIFI_STA);
+        const int n = WiFi.scanNetworks();
+        out.printf("wifi scan: %d networks, status %d\n", n, (int)WiFi.status());
+        for (int i = 0; i < n && i < 20; ++i)
+          out.printf("wifi scan  %-32s rssi %4d ch %2d auth %d\n", WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.channel(i),
+                     (int)WiFi.encryptionType(i));
+        WiFi.scanDelete();
+        if (wifi_configured && !wifi_up) wifi_start();
+        break;
+      }
       if (*arg == '-') {
         prefs.begin("net", false); prefs.clear(); prefs.end();
         if (net_fd >= 0) { net_fd = -1; net_client.stop(); }
@@ -1764,10 +1802,10 @@ void exec_line(char *s) {
         wifi_start();
         out.printf("wifi saved for \"%s\" - joining\n", arg);
       }
-      out.printf("wifi %s ssid \"%s\" ip %s rssi %d txp %.1f client %d\n",
+      out.printf("wifi %s ssid \"%s\" ip %s rssi %d txp %.1f client %d status %d\n",
                  !wifi_configured ? "not configured" : wifi_up ? "connected" : "joining",
                  wifi_ssid.c_str(), wifi_up ? WiFi.localIP().toString().c_str() : "-",
-                 wifi_up ? WiFi.RSSI() : 0, wifi_txp, (int)(net_fd >= 0));
+                 wifi_up ? WiFi.RSSI() : 0, wifi_txp, (int)(net_fd >= 0), (int)WiFi.status());
       break;
     }
     case 'R': {
@@ -1913,6 +1951,40 @@ void exec_line(char *s) {
         out.printf("rocking +-%.1f deg every %.2f s, legs %.2f\n", rock_deg, rock_period, rock_diff);
       }
       print_machine();
+      break;
+    }
+    case '*': {
+      const int n = nargs >= 1 ? ji : 0;
+      if (n <= 0 || n > SHOW_COUNT) {
+        if (show_id >= 0) out.printf("show: %s stopped\n", SHOW_MOVES[show_id].name);
+        show_id = -1; show_face = -1;
+        print_machine();
+        break;
+      }
+      if (mode != HOLD) { out.println(F("show: wake it first, and stop walking ('s')")); break; }
+      const ShowMove &mv = SHOW_MOVES[n - 1];
+      float q[6];
+      for (int j = 0; j < 6; ++j) q[j] = constrain(mv.keys[0].q[j] * 0.1f * PI / 180.0f, JOINT_MIN_RAD[j], JOINT_MAX_RAD[j]);
+      show_id = -1; show_face = mv.keys[0].face;
+      push_on = false;
+      ease_to(q, 1200);                      // from wherever it is to the first keyframe
+      last_control = micros();
+      show_t = 0.0f; show_id = n - 1;
+      out.printf("show: %s (%d keyframes, %.1f s)\n", mv.name, mv.n, mv.keys[mv.n - 1].t_ms / 1000.0f);
+      print_machine();
+      break;
+    }
+    case 'b': {
+      float a, t, pu, c, ft, lt;
+      const int n = sscanf(s + 1, "%f %f %f %f %f %f", &a, &t, &pu, &c, &ft, &lt);
+      if (n >= 1) lift_lead_s = constrain(a, 0.0f, 150.0f) / 1000.0f;
+      if (n >= 2) toe_up_deg = constrain(t, 0.0f, 12.0f);
+      if (n >= 3) leg_push_deg = constrain(pu, 0.0f, 10.0f);
+      if (n >= 4) pump_cap_deg = constrain(c, 4.0f, 16.0f);
+      if (n >= 5) lift_tau_s = constrain(ft, 10.0f, 150.0f) / 1000.0f;
+      if (n >= 6) leg_trim_on = lt > 0.5f;
+      out.printf("lift recipe: lead %.0f ms, toe up %.1f deg, leg push %.1f deg, pump cap %.0f deg, lift filter %.0f ms, leg level %s\n",
+                 lift_lead_s * 1000.0f, toe_up_deg, leg_push_deg, pump_cap_deg, lift_tau_s * 1000.0f, leg_trim_on ? "on" : "off");
       break;
     }
     case 'f': {
@@ -2213,6 +2285,12 @@ bool step_pose(bool moving, float t, int front, float q[6]) {
     q[3 * leg + 1] = h0 + cr - x[leg] + up + walk_lean * PI / 180.0f;
     q[3 * leg + 2] = k0 - cr + x[leg] - up;
   }
+  if (step_shuffle && !moving && toe_up_deg > 0.0f && stp[3] > 0.01f) {
+    // toe up on the lifted leg (b): more knee bend, in proportion to its lift (0..1 of a full lift)
+    const float full = 0.32f * stp[3];
+    q[2] -= toe_up_deg * PI / 180.0f * constrain(step_shuffle_lift[0] / full, 0.0f, 1.0f);
+    q[5] -= toe_up_deg * PI / 180.0f * constrain(step_shuffle_lift[1] / full, 0.0f, 1.0f);
+  }
   q[0] = q[3] = roll + walk_side * PI / 180.0f;
   q[0] += step_splay_deg * PI / 180.0f;            // + is outwards on the left hip roll,
   q[3] -= step_splay_deg * PI / 180.0f;            // - on the right one
@@ -2251,7 +2329,7 @@ void step_control(float dt) {
   rock_gain = (rock_mode > 0 && rock_peak > rock_amp_deg) ? max(0.3f, rock_amp_deg / rock_peak) : 1.0f;
   if (rock_mode > 0) rock_pump = constrain(rock_pump + 0.01f * (rock_amp_deg - rock_peak) * dt, -0.08f, 0.20f);
   if (rock_mode > 0 && rock_style >= 1 && !(step_shuffle && step_go <= 0.0f)) {   // frozen at rest (the drive page)
-    rock_hip_amp = constrain(rock_hip_amp + 1.5f * (rock_amp_deg - rock_peak) * dt, -6.0f, 12.0f);
+    rock_hip_amp = constrain(rock_hip_amp + 1.5f * (rock_amp_deg - rock_peak) * dt, -6.0f, pump_cap_deg);
     if (fabsf(er_deg) > 2.0f * rock_amp_deg) rock_hip_amp = min(rock_hip_amp, -3.0f);   // far too big: brake now
   }
   const float rock_brake = 0.0f;
@@ -2309,6 +2387,16 @@ void step_control(float dt) {
     // leaning right pushed itself further right (every lopsided rock since 10 Oct), and with 10 deg of room
     // instead of 6 it went over to lean left ("tutto inclinato dall'altra parte"). Now it pulls back.
     rock_trim_deg = constrain(rock_trim_deg - 0.4f * step_rock_center * dt, -tmax, tmax);
+    // 19 Oct 14:05 (b, 6th number): the rock's centre sits 2..7 deg right of the reference in every run today
+    // (walk_20261019_1*: mean roll +4..+7 in the late ones) - the hip-roll trim cannot move it (2 deg, it eats the
+    // pump's travel). With the centre that far right the lead lift raised the right foot with the trunk still
+    // upright (112624). The legs level it instead: the side it leans to gets longer, slowly (0.3 deg/s per deg),
+    // at most 5 deg.
+    // 14:55 (walk_20261019_145447): it works - mean roll +4..+7 -> +1..+2.7, 28 s with five stops and restarts -
+    // but it kept climbing to the 5 deg limit (left knee 10 deg deeper than the right), the rock tipped to -15..-21
+    // on the left and it went over back-left. At most 3 deg.
+    if (leg_trim_on && step_shuffle && rock_peak > 4.0f)
+      leg_trim_deg = constrain(leg_trim_deg + 0.3f * step_rock_center * dt, -3.0f, 3.0f);
   }
   // heading
   yaw_f += (yaw_rad - yaw_f) * min(1.0f, dt / YAW_TAU);
@@ -2337,15 +2425,18 @@ void step_control(float dt) {
   // gives itself the push at once, and the stride waits until the rock is there (step_go_now below).
   const bool resting = step_shuffle && step_go <= 0.0f;
   static bool was_resting = false;
-  if (was_resting && !resting && rock_peak < 2.0f) still_for = 2.0f;   // the push, now
+  // 19 Oct (walk_20261019_102635_guida_morbido): 30 s fine, then over backwards 0.8 s after a restart from rest - a
+  // restart gets half the push, and the pump starts from half its swing
+  static bool soft_restart = false;
+  if (was_resting && !resting && rock_peak < 2.0f) { still_for = 2.0f; soft_restart = true; rock_hip_amp = min(rock_hip_amp, 0.5f * pump_cap_deg); }   // the push, now
   was_resting = resting;
   if (rock_mode > 0 && !step_moving && !resting && rock_peak < 1.0f) still_for += dt;
   else if (resting || rock_peak >= 1.0f) still_for = 0.0f;
   if (still_for > 2.0f && kick_t < 0.0f) { kick_t = 0.0f; still_for = 0.0f; out.println(F("rock: giving it a push")); }
   if (kick_t >= 0.0f) {
-    kick = 0.15f * sinf(PI * kick_t / 0.3f);
+    kick = (soft_restart ? 0.075f : 0.15f) * sinf(PI * kick_t / 0.3f);
     kick_t += dt;
-    if (kick_t > 0.3f) kick_t = -1.0f;
+    if (kick_t > 0.3f) { kick_t = -1.0f; soft_restart = false; }
   }
   if (step_shuffle) {
     // + roll leans right: the left foot is free and goes forward
@@ -2376,8 +2467,19 @@ void step_control(float dt) {
     // 13 Oct: lift the feet a bit better - 0.25 -> 0.32 of the step's lift (0.4 fell forwards twice);
     // none at rest
     const float lift_k = 0.32f * stp[3] * step_go_now;
-    const float up[2] = {u > 0.0f ? lift_k * u * u : 0.0f, u < 0.0f ? lift_k * u * u : 0.0f};
-    for (int k = 0; k < 2; ++k) step_shuffle_lift[k] += (up[k] - step_shuffle_lift[k]) * min(1.0f, dt / 0.05f);
+    // with a lead (b), from the lean predicted ahead and unfiltered; without, as before
+    const float ul = lift_lead_s > 0.0f
+        ? constrain((er_deg + lift_lead_s * g_rate_roll * 180.0f / PI - steer_roll_deg - step_rock_center) / slide_amp, -1.0f, 1.0f)
+        : u;
+    const float up[2] = {ul > 0.0f ? lift_k * ul * ul : 0.0f, ul < 0.0f ? lift_k * ul * ul : 0.0f};
+    // 19 Oct 10:40 (walk_20261019_104047/104104): the unfiltered lead lift moved the knees 2.6x more but hip
+    // pitch and knee hit 400 deg/s on the raw rate's noise, and both runs fell forward after 4-6 s - with a lead
+    // now filtered too, 30 ms (the lead already pays for the delay)
+    // 11:01 (walk_20261019_110121/110156, toe 6): "per un po va bene, poi cede di nuovo il ginocchio" - fell
+    // forward after 2-3 s of walking, joint speed peaks still ~1000 deg/s summed (730 without the lead) on the
+    // shared PC USB supply. The filter is now settable (b, 5th number) to trade lift speed for more lead.
+    for (int k = 0; k < 2; ++k)
+      step_shuffle_lift[k] += (up[k] - step_shuffle_lift[k]) * min(1.0f, dt / (lift_lead_s > 0.0f ? lift_tau_s : 0.05f));
     step_armed = false;
   } else { step_shuffle_x = 0.0f; step_shuffle_lift[0] = step_shuffle_lift[1] = 0.0f; }
   if (!step_shuffle && !step_moving && rock_mode > 0 && (step_armed || rock_mode == 2) && att_valid) {
@@ -2435,6 +2537,14 @@ void step_control(float dt) {
       // stepping in, twice (161232) - the sign that damps is not the obvious one here either. It rocks out alone.
       if (step_shuffle && step_go <= 0.0f) u = 0.0f;
       q[0] += u; q[3] += u;
+      if (step_shuffle && leg_push_deg > 0.0f && step_go > 0.0f && !step_moving) {
+        // push (b): rolling right, the LEFT leg lengthens and pushes the body over; rolling left, the right one.
+        // Never the leg whose foot is lifting, never a shortening.
+        const float d = leg_push_deg * PI / 180.0f * step_go_now * constrain(g_rate_roll * 180.0f / PI / 15.0f, -1.0f, 1.0f);
+        const float lifting = 0.02f * 0.32f * stp[3];
+        if (d > 0.0f && step_shuffle_lift[0] <= lifting) { q[1] -= d; q[2] += d; }
+        if (d < 0.0f && step_shuffle_lift[1] <= lifting) { q[4] += d; q[5] -= d; }
+      }
       if (rock_angle_share > 0.0f && !step_moving) {
         // the 10 Oct law, the same sign (q -= gain * stp[9] * roll error), a share of it
         // 13 Oct 16:46 (walk_20261013_164638_guida): at 30% from a standing start the rock went from 0 to +-13 deg
@@ -2459,8 +2569,11 @@ void step_control(float dt) {
     // walk_20261013_151746: "dopo un po si smorza"). The lean now comes from the legs: the leg on the
     // side to lean to crouches deeper, the other stands taller, by about the lean wanted (~10 mm over the
     // ~60 mm between the feet is ~10 deg). The centring target still moves with it, so it does not fight it.
-    if (step_shuffle && steer_roll_deg != 0.0f) {
-      const float d = -steer_roll_deg * PI / 180.0f;   // + : lean left, left leg shorter
+    if (step_shuffle && (steer_roll_deg != 0.0f || leg_trim_deg != 0.0f)) {
+      // 17:10 (walk_20261019_170858): 25 s straight and three right turns fine, over to the left 2 s into the first
+      // left turn - the levelling's +3 (lean left) on top of the left turn's 9. The levelling fades out while steering.
+      const float steer_share = min(1.0f, fabsf(steer_roll_deg) / 9.0f);
+      const float d = (leg_trim_deg * (1.0f - steer_share) - steer_roll_deg) * PI / 180.0f;   // + : lean left, left leg shorter
       q[1] += d; q[2] -= d; q[4] -= d; q[5] += d;
     }
     q[1] -= rock_pdamp * g_rate_pitch; q[4] -= rock_pdamp * g_rate_pitch;
@@ -2476,7 +2589,38 @@ void step_control(float dt) {
   write_all();
 }
 
+void show_control(float dt) {
+  const ShowMove &mv = SHOW_MOVES[show_id];
+  show_t += dt;
+  const uint32_t ms = (uint32_t)(show_t * 1000.0f);
+  int k = 0;
+  while (k < mv.n - 1 && mv.keys[k + 1].t_ms <= ms) ++k;
+  float q[6];
+  if (k >= mv.n - 1) {
+    for (int j = 0; j < 6; ++j) q[j] = mv.keys[mv.n - 1].q[j] * 0.1f * PI / 180.0f;
+    show_face = mv.keys[mv.n - 1].face;
+  } else {
+    const ShowKey &a = mv.keys[k], &b = mv.keys[k + 1];
+    const float u = smooth01((float)(ms - a.t_ms) / max(1, (int)b.t_ms - (int)a.t_ms));
+    for (int j = 0; j < 6; ++j) q[j] = (a.q[j] + u * (b.q[j] - a.q[j])) * 0.1f * PI / 180.0f;
+    show_face = a.face;
+  }
+  const float lim = 3.0f * dt;
+  bool there = true;
+  for (int j = 0; j < 6; ++j) {
+    const float w = constrain(q[j], JOINT_MIN_RAD[j], JOINT_MAX_RAD[j]);
+    if (fabsf(w - command_rad[j]) > 0.01f) there = false;
+    command_rad[j] += constrain(w - command_rad[j], -lim, lim);
+  }
+  write_all();
+  if (k >= mv.n - 1 && there) {
+    out.printf("show: %s done\n", mv.name);
+    show_id = -1; show_face = -1; pose_kind = POSE_OTHER;
+  }
+}
+
 void control_step(float dt) {
+  if (mode == HOLD && show_id >= 0) { show_control(dt); return; }
   if (mode == STEP) { step_control(dt); return; }
   if (mode == WAKE) {
     const float t = wake_clock;

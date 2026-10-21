@@ -1,4 +1,4 @@
-# Calibration: the step nobody talks about
+# Calibration
 
 The firmware knows what angle every joint should be at. It knows nothing about where *your*
 servo horn ended up.

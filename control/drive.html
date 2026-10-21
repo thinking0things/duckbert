@@ -16,17 +16,20 @@
   main { max-width: 520px; margin: 0 auto; display: grid; gap: 14px; }
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   h1 { font-size: 20px; margin: 0; flex: 1; }
+  h2 { font-size: 15px; margin: 4px 0 0; }
   button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 10px;
            padding: 10px 14px; cursor: pointer; touch-action: none; }
   button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
   button.stop { background: var(--stop); border-color: var(--stop); color: #fff; }
+  button.on { background: var(--acc); border-color: var(--acc); color: #fff; }
   .pad { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto; gap: 10px; }
   .pad button { font-size: 34px; padding: 26px 0; border-radius: 16px; }
   .pad #up { grid-column: 2; grid-row: 1; }
   .pad #left { grid-column: 1; grid-row: 2; }
   .pad #right { grid-column: 3; grid-row: 2; }
   .pad button.held { background: var(--go); border-color: var(--go); color: #fff; }
-  .pad button:disabled { opacity: .45; }
+  .pad button:disabled, .moves button:disabled { opacity: .45; }
+  .moves { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
   .state { font-size: 22px; font-weight: 600; text-align: center; padding: 10px; border-radius: 10px; background: var(--panel);
            border: 1px solid var(--line); }
   .pill { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 13px; border: 1px solid var(--line); }
@@ -54,28 +57,38 @@
 
   <div class="pad">
     <button id="up" aria-label="forward">▲</button>
-    <button id="left" aria-label="left">⟲</button>
-    <button id="right" aria-label="right">⟳</button>
+    <button id="left" aria-label="turn left">⟲</button>
+    <button id="right" aria-label="turn right">⟳</button>
   </div>
-  <p class="hint">Hold: ▲ walks forward, ⟲ ⟳ turn. Let go: the rocking stops and he stands still. Press again: he starts
-    rocking and after 1–2 s he walks. The first press after Wake up takes him into position (3–4 s).
-    Keyboard: ↑ ← →. Recordings are saved as CSV in <code>control/logs/</code>.</p>
+  <p class="hint">Hold: ▲ walks forward, ⟲ ⟳ turn. Let go: the rocking stops and he stands still. The first press after
+    Wake up takes him into position and lets him settle (7 s), then he starts rocking and walks. Keyboard: ↑ ← →.
+    Recordings are saved as CSV in <code>control/logs/</code>.</p>
+
+  <h2>Moves</h2>
+  <div class="moves">
+    <button id="mv1" onclick="playMove(1)">Push-ups</button>
+    <button id="mv2" onclick="playMove(2)">Dance</button>
+    <button id="mv3" onclick="playMove(3)">Lean</button>
+    <button id="mv4" onclick="playMove(4)">Bow</button>
+    <button id="mv0" class="stop" onclick="stopMove()">Stop</button>
+  </div>
+  <p class="hint">Each move has its own face: push-ups 20 s, dance 12 s, leaning left and right 19 s, nod and bow 11 s.
+    From off he wakes up by himself; if he is walking he stops first. The arrows are off during a move;
+    "Stop" leaves him where he is.</p>
   <pre id="log"></pre>
 </main>
 
 <script>
-// The walking settings: rock size, step threshold and look-ahead, legs splay, pitch damping, trunk lean, crouch.
-const DEF = {len: 0.10, amp: 33, thr: 4, lead: 0.24, splay: 4, pp: -0.50, pd: 0, lean: -26, crouch: 20, pref: 0};
-function settings() { return Object.assign({}, DEF); }
+// The walking settings, the best found on the real robot: rock threshold 4 deg, rock size 20 deg, look-ahead 0.12 s,
+// pitch damping -0.03, legs 4 deg apart, crouch 20 deg, the soft pump (style 2), pitch reference 0, slide mode;
+// trunk lean -28; the free foot's lift timed with the rock (b); stride 0.10; turns at 60 %.
 function startCommands() {
-  const v = settings();
-  const o = 'o 0.209 -0.035 0.048 0.625 0.110 0.250 0.692 0.300 0.626 1.449 -0.681 0.031'.split(' ');
-  o[3] = (+v.len).toFixed(2);                              // stride length
-  o[11] = (+v.pp).toFixed(3);
-  return ['B 0', 'K 0', 'Q 0', 'H 0', 'W 0', 'Z 100', o.join(' '),
-          `v ${(+v.thr).toFixed(1)} ${(+v.amp).toFixed(1)} 1 ${(+v.lead).toFixed(2)} ${(+v.pd).toFixed(3)} ${(+v.splay).toFixed(1)} ${(+v.crouch).toFixed(0)} 1 ${(+v.pref).toFixed(1)} 2 0`,
-          `L ${(+v.lean).toFixed(1)}`, 'f 0'];
+  const o = 'o 0.209 -0.035 0.10 0.625 0.110 0.250 0.692 0.300 0.626 1.449 -0.500 0.031';
+  return ['B 0', 'K 0', 'Q 0', 'H 0', 'W 0', 'Z 100', o,
+          'v 4.0 20.0 1 0.12 -0.030 4.0 20 2 0.0 2 0',
+          'L -28.0', 'b 50 4 0 12 60 1', 'f 0'];
 }
+const TURN = 60;
 
 function log(t) { const e = document.getElementById('log'); e.textContent = (new Date().toLocaleTimeString() + '  ' + t + '\n' + e.textContent).slice(0, 3000); }
 async function send(c) {
@@ -85,13 +98,12 @@ async function send(c) {
 let state = null, seen = 0;
 function mode() { return state && state.kv ? state.kv.mode : null; }
 
-// ---- what is held, and what the robot is told
-// 'up' | 'left' | 'right' | null; the last one pressed wins, letting go of it falls back to one still held.
+// What is held, and what the robot is told: 'up' | 'left' | 'right' | null. The last one pressed wins; letting go of it
+// falls back to one still held. The firmware ramps the stride and the steering itself, so the page only sends what
+// changed, one state at a time.
 const held = new Set(); let order = [];
 let ready = false, starting = false, sent = 'none';
 function want() { for (let i = order.length - 1; i >= 0; --i) if (held.has(order[i])) return order[i]; return null; }
-// Transitions: the firmware ramps the stride (f, ~1.2 s) and the steering lean (~0.5 s); the page only sends what
-// changed, one state at a time, never a burst. No heading hold (13 Oct: it leaned it too much going straight).
 let busy = false;
 async function apply() {
   if (busy) return; busy = true;
@@ -101,8 +113,8 @@ async function apply() {
       if (w === sent) break;
       if (w === 'none')       { await send('W 0'); await send('H 0'); await send('f 0'); }
       else if (w === 'up')    { await send('W 0'); await send('H 0'); await send('f 100'); }
-      else if (w === 'left')  { await send('H 0'); await send('W -100'); await send('f 100'); }
-      else if (w === 'right') { await send('H 0'); await send('W 100'); await send('f 100'); }
+      else if (w === 'left')  { await send('H 0'); await send('W -' + TURN); await send('f 100'); }
+      else if (w === 'right') { await send('H 0'); await send('W ' + TURN); await send('f 100'); }
       sent = w;
       log({none: 'stop', up: 'forward', left: 'turning left', right: 'turning right'}[w]);
     }
@@ -112,13 +124,15 @@ async function apply() {
 async function start() {
   const m = mode();
   if (m === 'LIMP' || m === 'WAKE' || !m) { log('press Wake up first'); return; }
-  if (m === 'STEP') { ready = true; return; }
   if (starting) return;
+  if (m === 'STEP') { ready = true; return; }
+  if (playing() || moveBusy) { log('wait for the move to finish (or Stop)'); return; }
   starting = true; ready = false; sent = 'none'; show();
   for (const c of startCommands()) await send(c);
   await send('m');
-  log('rocking, getting ready…');
-  setTimeout(() => { starting = false; ready = mode() === 'STEP'; if (ready) log('ready'); show(); apply(); }, 3500);
+  log('settling, 7 s…');
+  // standing still for 7 s lets the trunk and the hips settle before the first step: most falls came from walking too soon
+  setTimeout(() => { starting = false; ready = mode() === 'STEP'; if (ready) log('ready'); show(); apply(); }, 7000);
 }
 
 function press(k) {
@@ -146,6 +160,35 @@ document.addEventListener('keyup', e => { const k = KEYS[e.key]; if (k) { e.prev
 window.addEventListener('blur', releaseAll);
 document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
 
+// The moves are played by the firmware ('* n', show_moves.h).
+const MOVE_NAME = {1: 'push-ups', 2: 'dance', 3: 'lean', 4: 'bow'};
+let moveBusy = false;
+function playing() { return state && state.kv && state.kv.show && state.kv.show !== '0' ? +state.kv.show : 0; }
+async function waitMode(m, ms) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) { if (mode() === m) return true; await new Promise(r => setTimeout(r, 200)); }
+  return mode() === m;
+}
+async function playMove(n) {
+  if (moveBusy || playing()) return;
+  moveBusy = true; show();
+  try {
+    const m = mode();
+    if (!m) { log('robot not connected'); return; }
+    if (m === 'STEP') {
+      held.clear(); ready = false; sent = 'none';
+      await send('W 0'); await send('H 0'); await send('f 0'); await send('s');
+      log('stopping for the move');
+    } else if (m === 'LIMP') {
+      await send('e'); log('waking up for the move');
+      if (!await waitMode('HOLD', 8000)) { log('he did not wake up'); return; }
+    }
+    if (!await waitMode('HOLD', 3000)) { log('not standing still: try again'); return; }
+    await send('* ' + n); log('move: ' + MOVE_NAME[n]);
+  } finally { moveBusy = false; show(); }
+}
+async function stopMove() { await send('* 0'); log('move stopped'); }
+
 async function wake() { ready = false; sent = 'none'; await send('e'); log('waking up'); }
 async function park() { held.clear(); ready = false; sent = 'none'; await send('W 0'); await send('H 0'); await send('y'); log('parked'); show(); }
 async function toggleRec() {
@@ -158,48 +201,41 @@ async function toggleRec() {
 function show() {
   const m = mode();
   const w = ready ? (want() || 'none') : 'none';
+  const p = playing();
   for (const id of ['up', 'left', 'right']) {
     const b = document.getElementById(id);
     b.classList.toggle('held', held.has(id));
-    b.disabled = !(m === 'HOLD' || m === 'STEP');
+    b.disabled = !(m === 'HOLD' || m === 'STEP') || p > 0 || moveBusy;
+  }
+  for (let n = 1; n <= 4; ++n) {
+    const b = document.getElementById('mv' + n);
+    b.classList.toggle('on', p === n);
+    b.disabled = !m || m === 'WAKE' || moveBusy || (p > 0 && p !== n) || starting;
   }
   const st = document.getElementById('state');
   if (!m) st.textContent = '–';
   else if (m === 'LIMP') st.textContent = 'off – press Wake up';
   else if (m === 'WAKE') st.textContent = 'waking up…';
   else if (starting) st.textContent = 'getting ready…';
+  else if (m === 'HOLD' && p) st.textContent = 'move: ' + MOVE_NAME[p];
   else if (m === 'HOLD') st.textContent = 'awake – hold an arrow';
   else if (m === 'STEP') st.textContent = {none: 'standing', up: 'forward', left: 'turning left', right: 'turning right'}[w];
   else st.textContent = m;
-}
-
-// The page reloads itself when the bridge serves a newer copy, but only with the robot off or standing still.
-let pageSig = null, sigAt = 0;
-async function checkPage(m) {
-  if (Date.now() - sigAt < 10000) return; sigAt = Date.now();
-  try {
-    const t = await (await fetch(location.pathname, {cache: 'no-store'})).text();
-    let h = 0; for (let i = 0; i < t.length; ++i) h = (h * 31 + t.charCodeAt(i)) | 0;
-    const s = t.length + ':' + h;
-    if (pageSig === null) pageSig = s; else if (s !== pageSig && (m === 'LIMP' || m === 'HOLD') && held.size === 0) location.reload();
-  } catch (e) {}
 }
 
 async function poll() {
   try {
     const s = await (await fetch('/api/state?since=' + seen)).json();
     seen = s.seen; state = s;
-    s.log.forEach(l => { if (!l.startsWith('> ') && (l.includes('fell') || l.includes('IMU'))) log(l); });
+    s.log.forEach(l => { if (!l.startsWith('> ') && (l.includes('fell') || l.includes('IMU') || l.startsWith('show:'))) log(l); });
   } catch (e) { state = null; }
   const link = document.getElementById('link');
   if (!state) { link.textContent = 'bridge not running'; link.className = 'pill bad'; }
   else if (!state.connected) { link.textContent = 'robot not connected'; link.className = 'pill bad'; }
   else { link.textContent = 'connected'; link.className = 'pill ok'; }
-  const m = mode();
-  if (m !== 'STEP' && ready) { ready = false; sent = 'none'; held.clear(); }   // fell, parked or stopped elsewhere
+  if (mode() !== 'STEP' && ready) { ready = false; sent = 'none'; held.clear(); }   // fell, parked or stopped elsewhere
   const b = document.getElementById('rec'), on = state && state.kv && state.kv.rec === '1';
   b.textContent = on ? '■ stop recording' : '● record'; b.className = on ? 'stop' : '';
-  checkPage(m);
   show();
 }
 setInterval(poll, 400); poll();

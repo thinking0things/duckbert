@@ -26,8 +26,8 @@ Then calibrate: [`../docs/calibration.md`](../docs/calibration.md).
 | Gyroscope SDA / SCL | 8 / 9 |
 | OLED SDA / SCL | 10 / 7 |
 
-The servos need their own 5 V supply. Never feed them from the board's 3.3 V pin. See the
-[wiring diagram](../docs/wiring.png). A joint can be moved to another pin over serial with `P <joint> <gpio>`.
+The servos take 5 V from the regulator, never from the board's 3.3 V pin, and every ground is common.
+A joint can be moved to another pin over serial with `P <joint> <gpio>`.
 
 ## How he walks
 

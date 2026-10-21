@@ -24,7 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from duckbert_console import Link, board_ports, JOINTS, DEFAULT_TCP
 
 HERE = pathlib.Path(__file__).resolve().parent
-PAGE = HERE / 'drive.html'        # hold an arrow to walk, let go to stop
+PAGE = HERE / 'drive.html'        # hold an arrow to walk, let go to stop; the moves
 CALIB = HERE / 'calibrate.html'   # guided calibration, one joint pair at a time, at /calibrate
 
 NUM = r'-?\d+(?:\.\d+)?'
@@ -33,7 +33,7 @@ ALLOWED = re.compile(rf'''(?x)
     | q(?:\ \d\d?)?                  # crouch, optional depth in degrees
     | T\ -?[01]                      # head tilt
     | M(?:\ [01])?                   # IMU status / raw stream on-off
-    | N(?:\ p\ \d\d?(?:\.\d)?)?      # Wi-Fi status, or transmit power - credentials go over USB, never through here
+    | N(?:\ p\ \d\d?(?:\.\d)?|\ s)?   # Wi-Fi status, transmit power, or scan - credentials go over USB, never through here
     | Y(?:\ 1)?                      # face status / display test
     | I\ [01]                        # the gait's own gyro feedback
     | F\ \d\d?\d?(?:\.\d)?             # how much of that feedback, percent
@@ -46,7 +46,9 @@ ALLOWED = re.compile(rf'''(?x)
     | o(?:(?:\ -?\d*\.?\d+){{11,12}})?    # one-step parameters, eleven or twelve numbers (bare o reports them)
     | v(?:\ \d*\.?\d+\ \d*\.?\d+\ [012](?:\ \d*\.?\d+(?:\ -?\d*\.?\d+(?:\ \d*\.?\d+(?:\ \d*\.?\d+(?:\ [012](?:\ -?\d*\.?\d+(?:\ [012](?:\ -?\d*\.?\d+)?)?)?)?)?)?)?)?)?   # steps on the rock: threshold, rock size, mode [, lead s [, pitch damping [, splay [, crouch [, style 0/1/2 [, pitch ref [, 0 steps / 1 in place / 2 slide [, legs pump deg]]]]]]]]
     | f\ \d{{1,3}}                       # slide: share of stride and lift to use, 0..100 (the drive page)
+    | b(?:\ \d*\.?\d+){{1,6}}               # slide lift recipe: lead ms, toe-up deg, leg push deg, pump cap deg, lift filter ms, leg level 0/1
     | Z(?:\ \d\d?\d?)?                # forward share of the stride; Z 0 + W turns on the spot
+    | \*\ [0-4]                      # the video moves: 1 squats, 2 dance, 3 lean, 4 bow; 0 stops
     | E\ \d\d\d?(?:\.\d)?            # knee swing, percent: toe clearance
     | Q\ \d\d?(?:\.\d)?(?:\ \d(?:\.\d\d?)?)?(?:\ \d(?:\.\d\d?)?)?   # rock the weight side to side
     | H\ [01](?:\ -?\d+(?:\.\d+)?\ \d+(?:\.\d+)?)?   # heading hold [+ its two gains; a negative gain flips it]

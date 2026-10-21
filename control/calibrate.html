@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Duckbert · calibration</title>
+<title>Duckbert · guided calibration</title>
 <style>
   /* One step on screen at a time: what to look at (a drawing), the two joints to nudge, next. */
   :root { --bg: #f3f1ec; --panel: #fff; --fg: #1d1f22; --dim: #6b6f76; --line: #dcd8cf;
@@ -64,26 +64,26 @@
 const SQ = (x, y) => `<path d="M${x} ${y} h14 v14" fill="none" style="stroke:var(--hl)" stroke-width="2"/>`;
 const FIG = {
   roll: `<svg viewBox="0 0 260 170" width="300"><rect style="stroke:var(--fg)" x="70" y="10" width="120" height="70" rx="8" fill="none" stroke-width="3"/>
-    <text style="fill:var(--dim)" x="130" y="50" text-anchor="middle" font-size="12">body (front view)</text>
+    <text style="fill:var(--dim)" x="130" y="50" text-anchor="middle" font-size="12">body (front)</text>
     <line style="stroke:var(--hl)" x1="60" y1="92" x2="200" y2="92" stroke-width="6" stroke-linecap="round"/>
     <text style="fill:var(--hl)" x="130" y="112" text-anchor="middle" font-size="12">hip brackets: level</text>
     <line style="stroke:var(--fg)" x1="80" y1="96" x2="80" y2="160" stroke-width="5"/><line style="stroke:var(--fg)" x1="180" y1="96" x2="180" y2="160" stroke-width="5"/>
     <text style="fill:var(--dim)" x="80" y="168" text-anchor="middle" font-size="11">L</text><text style="fill:var(--dim)" x="180" y="168" text-anchor="middle" font-size="11">R</text></svg>`,
   thigh: `<svg viewBox="0 0 260 190" width="300"><rect style="stroke:var(--fg)" x="40" y="10" width="150" height="60" rx="8" fill="none" stroke-width="3"/>
-    <text style="fill:var(--dim)" x="115" y="44" text-anchor="middle" font-size="12">body (side view) · front →</text>
+    <text style="fill:var(--dim)" x="115" y="44" text-anchor="middle" font-size="12">body (side) · front →</text>
     <circle style="fill:var(--fg)" cx="115" cy="80" r="5"/><line style="stroke:var(--hl)" x1="115" y1="80" x2="115" y2="135" stroke-width="7" stroke-linecap="round"/>
     <circle style="fill:var(--fg)" cx="115" cy="135" r="5"/><line style="stroke:var(--fg)" x1="115" y1="135" x2="145" y2="180" stroke-width="5" opacity=".5"/>
     ${SQ(115, 70)}<text style="fill:var(--hl)" x="135" y="112" font-size="12">thigh: 90° to the body</text>
     <text style="fill:var(--dim)" x="125" y="84" font-size="10">hip screw</text><text style="fill:var(--dim)" x="125" y="146" font-size="10">knee screw</text></svg>`,
   shin: `<svg viewBox="0 0 260 190" width="300"><rect style="stroke:var(--fg)" x="40" y="10" width="150" height="60" rx="8" fill="none" stroke-width="3"/>
-    <text style="fill:var(--dim)" x="115" y="44" text-anchor="middle" font-size="12">body (side view) · front →</text>
+    <text style="fill:var(--dim)" x="115" y="44" text-anchor="middle" font-size="12">body (side) · front →</text>
     <circle style="fill:var(--fg)" cx="115" cy="80" r="5"/><line style="stroke:var(--fg)" x1="115" y1="80" x2="85" y2="122" stroke-width="5" opacity=".5"/>
     <circle style="fill:var(--fg)" cx="85" cy="122" r="5"/><line style="stroke:var(--hl)" x1="85" y1="122" x2="85" y2="180" stroke-width="7" stroke-linecap="round"/>
     <path style="stroke:var(--hl)" d="M85 74 v6" stroke-width="2"/><line style="stroke:var(--hl)" x1="70" y1="70" x2="100" y2="70" stroke-width="2" stroke-dasharray="3 3"/>
     <text style="fill:var(--hl)" x="95" y="160" font-size="12">shin: 90° to the body</text>
     <text style="fill:var(--dim)" x="95" y="126" font-size="10">knee screw</text><text style="fill:var(--dim)" x="95" y="186" font-size="10">foot bolts</text></svg>`,
   straight: `<svg viewBox="0 0 260 190" width="300"><rect style="stroke:var(--fg)" x="40" y="10" width="150" height="60" rx="8" fill="none" stroke-width="3"/>
-    <text style="fill:var(--dim)" x="115" y="44" text-anchor="middle" font-size="12">body (side view)</text>
+    <text style="fill:var(--dim)" x="115" y="44" text-anchor="middle" font-size="12">body (side)</text>
     <line style="stroke:var(--hl)" x1="115" y1="80" x2="115" y2="180" stroke-width="7" stroke-linecap="round"/>
     <circle style="fill:var(--fg)" cx="115" cy="80" r="5"/><circle style="fill:var(--fg)" cx="115" cy="130" r="5"/>
     <text style="fill:var(--hl)" x="128" y="134" font-size="12">leg fully straight</text></svg>`,
@@ -94,16 +94,16 @@ const FIG = {
 const STEPS = [
   {name: 'Prepare', title: '1 · Prepare the robot',
    body: `<ol><li>Robot <b>on and connected</b> (the top bar must say "connected").</li>
-     <li>Press <b>Wake up</b>: the servos switch on and he crouches. Hold him in your hand or put him on a stand
-       with his legs hanging: <b>the feet must not touch anything</b>, or the legs can't reach their pose.</li>
-     <li>Keep a <b>set square</b> at hand: you measure against the body, not against the table.</li></ol>`,
-   actions: [['Wake up', 'e']], joints: []},
+     <li>Press <b>Wake</b>: the servos power up and it crouches. Hold it in your hand or rest it on a stand
+       with the legs free: <b>the feet must not touch anything</b>, or the legs cannot reach their pose.</li>
+     <li>Keep a <b>set square</b> at hand: measure against the body, not against the table.</li></ol>`,
+   actions: [['Wake', 'e']], joints: []},
   {name: 'Hips (roll)', title: '2 · Hip roll', fig: 'roll', pose: 'c 0',
-   body: `The robot puts every joint at zero. Look at him <b>from the front</b>: the two brackets under the body,
-     where the legs attach, must be <b>level</b>, parallel to the bottom of the body. If one is tilted,
-     use its buttons until it is straight.`, joints: [0, 3]},
+   body: `The robot puts every joint at zero. Look at it <b>from the front</b>: the two brackets under the body, where
+     the legs attach, must be <b>level</b>, parallel to the bottom of the body. If one is tilted, use its
+     buttons until it is straight.`, joints: [0, 3]},
   {name: 'Thighs', title: '3 · Thighs', fig: 'thigh', pose: 'c 1',
-   body: `The robot puts the hip pitch at −25.1°. Look at him <b>from the side</b>: the line from the <b>hip screw</b>
+   body: `The robot puts the hip pitch at −25.1°. Look at it <b>from the side</b>: the line from the <b>hip screw</b>
      to the <b>knee screw</b> must be at <b>90° to the body</b>. Rest the set square on the bottom of the body.`,
    joints: [1, 4]},
   {name: 'Shins', title: '4 · Shins', fig: 'shin', pose: 'c 2',
@@ -111,8 +111,8 @@ const STEPS = [
      <b>foot bolts</b> must be at <b>90° to the body</b>. Do the thighs first: the shin hangs from the thigh.`,
    joints: [2, 5]},
   {name: 'Check and save', title: '5 · Check and save', fig: 'straight', pose: 'straight',
-   body: `The robot puts his legs <b>fully straight</b> (hip −25.1°, knee +49.9°): thigh and shin must be in line
-     and square to the body, and both legs the same. If they are, press <b>Save to the board</b>:
+   body: `The robot puts its legs <b>fully straight</b> (hip −25.1°, knee +49.9°): thigh and shin must be in line
+     and square to the body, and both legs the same. If it looks right, <b>Save to the board</b>:
      without saving, the corrections are lost at the next restart.`,
    actions: [['Save to the board', 'w'], ['Park', 'y']], joints: [0, 1, 2, 3, 4, 5]},
 ];
@@ -148,7 +148,7 @@ function draw() {
   document.getElementById('card').innerHTML = `<h2>${s.title}</h2>
     ${s.fig ? `<div class="fig">${FIG[s.fig]}</div>` : ''}
     <div>${s.body}</div>
-    ${s.pose ? `<div class="row" style="margin-top:10px"><button onclick="pose('${s.pose}')">put the pose back</button></div>` : ''}
+    ${s.pose ? `<div class="row" style="margin-top:10px"><button onclick="pose('${s.pose}')">pose again</button></div>` : ''}
     ${joints ? `<div class="two" style="margin-top:12px">${joints}</div>
       <p class="hint">Not sure which way? Press +1 and look: if it gets worse, press −1 twice. Then fine-tune with ±0.2.</p>` : ''}
     ${actions ? `<div class="row" style="margin-top:12px">${actions}<span id="savenote" class="hint" style="margin:0"></span></div>` : ''}`;
@@ -177,10 +177,10 @@ function confirmOnPage() {
 
 function paint() {
   const link = document.getElementById('link'), mode = document.getElementById('mode');
-  if (!state) { link.textContent = 'bridge not running'; link.className = 'pill bad'; }
+  if (!state) { link.textContent = 'bridge off'; link.className = 'pill bad'; }
   else if (!state.connected) { link.textContent = 'robot not connected'; link.className = 'pill bad'; }
   else { link.textContent = 'connected'; link.className = 'pill ok'; }
-  const NAME = {LIMP: 'off', WAKE: 'waking up', HOLD: 'holding, servos on', STEP: 'rocking', WALK: 'walking'};
+  const NAME = {LIMP: 'limp', WAKE: 'waking', HOLD: 'holding, servos on', STEP: 'rocking', WALK: 'walking'};
   const m = state && state.kv && state.kv.mode; mode.textContent = NAME[m] || m || '–';
   for (let i = 0; i < 6; i++) { const e = document.getElementById('t' + i); const t = trimOf(i); if (e && t !== null) e.textContent = (t >= 0 ? '+' : '') + t.toFixed(1); }
 }
